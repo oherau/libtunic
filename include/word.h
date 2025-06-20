@@ -1,0 +1,21 @@
+#ifndef __WORD_H__
+#define __WORD_H__
+
+#include <vector>
+#include <string>
+#include <rune.h>
+
+class Word {
+public:
+	Word() = default;
+	Word(const std::string& str);
+	std::string get_hash() const;
+	std::string to_pseudophonetic() const;
+	bool parse_runes(const std::string& str, std::vector<Rune>& runes);
+	size_t size() const { return m_runes.size(); }
+private:
+	std::vector<Rune> m_runes;
+};
+
+
+#endif __WORD_H__
