@@ -2,35 +2,41 @@
 #define __RUNE_H__
 
 #include <string>
+#include <opencv2/core/types.hpp>
 
 /*
 * BIT representation of the TUNIC RUNE DECODER
 BASED ON THIS DECODER NOTATION
 https://lunar.exchange/tunic-decoder/#
-
+                A
                 --
          1   -- -- --   2
           --    --    --
-       --       --6      --
-       -- --    --    --
-       --   3-- -- --4
-     5 --       --
-       --       --8
-       --       --
-     ------------------------
-       --       --
-       --       --
-     13--       --
-       --   9-- -- --10
-       -- --    --    --
-       --       --       --
+     D --       --6      -- B
+       -- --    --    --  :
+       --   3-- -- --4    :
+     5 --      C--        : (7)
+       --       --8       :
+       --      F--        : 
+     E -------------------- G
+   
+     L --       --H       :
+     13--   9-- -- --10   : (15)
+       -- --    --    --  :
+     K --       --14     -- I
           --    --    --
            11-- -- --12
-                --
+               J--
                 00
-              00  00 16
+              0 M  0 16
                 00
 
+*/
+
+
+
+
+/*
                 
 VOWELS
           /  \
@@ -63,6 +69,42 @@ CONSONANTS
             10
 
 */
+
+const cv::Point2d RUNE_POINT_A(50.00f, 0.00f);
+const cv::Point2d RUNE_POINT_B(100.00f, 12.73f);
+const cv::Point2d RUNE_POINT_C(50.00f, 27.42f);
+const cv::Point2d RUNE_POINT_D(0.00f, 12.73f);
+const cv::Point2d RUNE_POINT_E(0.00f, 40.16f);
+const cv::Point2d RUNE_POINT_F(50.00f, 40.16f);
+const cv::Point2d RUNE_POINT_G(100.00f, 40.16f);
+const cv::Point2d RUNE_POINT_H(50.00f, 57.77f);
+const cv::Point2d RUNE_POINT_I(100.00f, 73.45f);
+const cv::Point2d RUNE_POINT_J(50.00f, 87.16f);
+const cv::Point2d RUNE_POINT_K(0.00f, 73.45f);
+const cv::Point2d RUNE_POINT_L(0.00f, 57.77f);
+const cv::Point2d RUNE_POINT_M(50.00f, 95.00f);
+
+
+
+
+const auto RUNE_SEGMENT_01 = { RUNE_POINT_A, RUNE_POINT_D };
+const auto RUNE_SEGMENT_02 = { RUNE_POINT_A, RUNE_POINT_B };
+const auto RUNE_SEGMENT_03 = { RUNE_POINT_C, RUNE_POINT_D };
+const auto RUNE_SEGMENT_04 = { RUNE_POINT_B, RUNE_POINT_C };
+const auto RUNE_SEGMENT_05 = { RUNE_POINT_D, RUNE_POINT_E };
+const auto RUNE_SEGMENT_06 = { RUNE_POINT_A, RUNE_POINT_C };
+const auto RUNE_SEGMENT_08 = { RUNE_POINT_C, RUNE_POINT_F };
+
+const auto RUNE_SEGMENT_09 = { RUNE_POINT_H, RUNE_POINT_K };
+const auto RUNE_SEGMENT_10 = { RUNE_POINT_H, RUNE_POINT_I };
+const auto RUNE_SEGMENT_11 = { RUNE_POINT_J, RUNE_POINT_K };
+const auto RUNE_SEGMENT_12 = { RUNE_POINT_I, RUNE_POINT_J };
+const auto RUNE_SEGMENT_13 = { RUNE_POINT_K, RUNE_POINT_L };
+const auto RUNE_SEGMENT_14 = { RUNE_POINT_H, RUNE_POINT_J };
+
+const auto RUNE_RADIUS_16 = { RUNE_POINT_M, RUNE_POINT_J };
+
+const auto RUNE_SEGMENT_SEP = { RUNE_POINT_E, RUNE_POINT_G };
 
 
 // MASKS
@@ -118,6 +160,8 @@ const auto RUNE_CONSONANT_Z     = 0x22a4;
 const auto RUNE_CONSONANT_ZH    = 0x03ac;
 
 
+const 
+
 class Rune {
 public:
     Rune() = default;
@@ -127,15 +171,17 @@ public:
     std::string to_pseudophonetic() const;
 	std::string to_hexa() const;
 	bool from_hexa(const std::string& hexString);
+    bool generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image) const;
     
 	//operator overloads
     Rune operator+(const Rune& other) const { return Rune(m_rune | other.m_rune);}
 	bool operator<(const Rune& other) const { return m_rune < other.m_rune; }
     bool operator==(const Rune& other) const { return m_rune == other.m_rune; }
-    std::string get_hexa() const;
 private:
     unsigned long m_rune;
     std::string to_string(unsigned long bin) const;
+	void draw_segment(const std::initializer_list<cv::Point2d>& segment, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const;
+    void draw_circle(const std::initializer_list<cv::Point2d>& radius, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const;
 };
 
 #endif // __RUNE_H__

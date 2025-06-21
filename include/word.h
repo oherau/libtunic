@@ -13,6 +13,7 @@ public:
 	std::string to_pseudophonetic() const;
 	bool parse_runes(const std::string& str, std::vector<Rune>& runes);
 	size_t size() const { return m_runes.size(); }
+	bool generate_image(cv::Size2i rune_size, int tickness, cv::Mat& output_image) const;
 private:
 	std::vector<Rune> m_runes;
 };

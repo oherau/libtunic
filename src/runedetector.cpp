@@ -38,16 +38,19 @@ bool RuneDetector::register_word_image(const fs::path& word_image)
 
 	std::string rune_part = "";
 	std::string translation = "";
+	Word word;
 	if(pos != std::string::npos) {
 		rune_part = filename.substr(0, pos);
+		word = Word(rune_part);
 		translation = filename.substr(pos + 1);
 	}
 	else {
 		rune_part = filename;
-		translation = "";
+		word = Word(rune_part);
+		translation = word.to_pseudophonetic();
 	}
 
-	auto word = Word(word_image.stem().string());
+	
 	if(word.size() == 0) {
 		std::cerr << "Error: Invalid word name from image path: " << word_image << std::endl;
 		return false;
@@ -74,6 +77,25 @@ bool RuneDetector::register_word_image(const fs::path& word_image)
 	return true;
 }
 
+bool RuneDetector::decode_word_image(const fs::path& word_image)
+{
+	auto original_img = cv::imread(word_image.string(), cv::IMREAD_COLOR_BGR);
+	if (original_img.empty()) {
+		std::cerr << "Error: Could not load rune image from " << word_image << std::endl;
+		return false;
+	}
+
+	//auto result1 = cropBlackBorders(original_img);
+	//auto result2 = get_image_lines(result1);
+
+	//cv::imshow("Detected Runes", result1);
+	//cv::imshow("Detected Runes", result2);
+	//cv::waitKey(0); // Wait for a key press to close the window
+	cv::destroyAllWindows();
+
+	return false;
+}
+
 // Custom comparison function for sorting character zones
 bool compareCharacterZones(const RuneZone& a, const RuneZone& b) {
 	// Define a small tolerance for vertical alignment to consider characters on the same line
@@ -92,7 +114,7 @@ bool compareCharacterZones(const RuneZone& a, const RuneZone& b) {
 	}
 }
 
-cv::Mat get_image_lines(const cv::Mat& src) {
+cv::Mat RuneDetector::get_image_lines(const cv::Mat& src) {
 
 	// Declare the output variables
 	cv::Mat dst, cdst, cdstP;
@@ -132,67 +154,154 @@ cv::Mat get_image_lines(const cv::Mat& src) {
 	return cv::Mat(cdstP);
 }
 
-bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& detected_words)
-{
-	auto image = cv::imread(image_path.string(), cv::IMREAD_GRAYSCALE);
+cv::Mat RuneDetector::cropBlackBorders(const cv::Mat& image) {
 	if (image.empty()) {
+		std::cerr << "Input image is empty. Cannot crop." << std::endl;
+		return cv::Mat(); // Return empty Mat
+	}
+
+	// 1. Convert to grayscale (if not already)
+	cv::Mat grayImage;
+	if (image.channels() == 3) {
+		cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+	}
+	else {
+		grayImage = image.clone(); // If already grayscale, just make a copy
+	}
+
+	// 2. Threshold the image to create a binary mask
+	// Pixels brighter than 'threshold_value' become 255 (white), others become 0 (black)
+	// We want to identify non-black pixels as content.
+	// A low threshold (e.g., 5 or 10) is good to catch near-black pixels as part of the border.
+	cv::Mat binaryImage;
+	int threshold_value = 10; // Adjust this value if your "black" border isn't pure black
+	cv::threshold(grayImage, binaryImage, threshold_value, 255, cv::THRESH_BINARY);
+
+	// Optional: Morphological operations to clean up small noise or gaps
+	// cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+	// cv::morphologyEx(binaryImage, binaryImage, cv::MORPH_OPEN, kernel, cv::Point(-1,-1), 2); // Remove small black dots
+	// cv::morphologyEx(binaryImage, binaryImage, cv::MORPH_CLOSE, kernel, cv::Point(-1,-1), 2); // Fill small white gaps
+
+	// 3. Find contours in the binary image
+	std::vector<std::vector<cv::Point>> contours;
+	cv::findContours(binaryImage, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+	// 4. Find the bounding rectangle of the largest contour (assumed to be the content)
+	cv::Rect boundingBox;
+	if (!contours.empty()) {
+		double maxArea = 0;
+		int largestContourIdx = -1;
+
+		for (size_t i = 0; i < contours.size(); i++) {
+			double area = cv::contourArea(contours[i]);
+			if (area > maxArea) {
+				maxArea = area;
+				largestContourIdx = i;
+			}
+		}
+
+		if (largestContourIdx != -1) {
+			boundingBox = cv::boundingRect(contours[largestContourIdx]);
+		}
+		else {
+			// This case should ideally not be hit if contours is not empty
+			std::cerr << "No valid largest contour found. Returning original image." << std::endl;
+			return image.clone();
+		}
+	}
+	else {
+		std::cerr << "No contours found in the image. It might be all black or all white. Returning original image." << std::endl;
+		return image.clone(); // Or return an empty Mat if an empty image is desired
+	}
+
+	// 5. Crop the original image using the detected bounding box
+	// Ensure the bounding box is valid before cropping
+	if (boundingBox.width <= 0 || boundingBox.height <= 0) {
+		std::cerr << "Calculated bounding box has zero or negative dimensions. Returning original image." << std::endl;
+		return image.clone();
+	}
+
+	cv::Mat croppedImage = image(boundingBox);
+
+	return croppedImage;
+}
+
+bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& detected_words, bool debug_mode)
+{
+	auto original_img = cv::imread(image_path.string(), cv::IMREAD_COLOR_BGR);
+	if (original_img.empty()) {
 		std::cerr << "Error: Could not load rune image from " << image_path << std::endl;
 		return false;
 	}
 
+	std::vector<double> scale_factors;
+	cv::Mat image;
+	cv::cvtColor(original_img, image, cv::COLOR_BGR2GRAY);
 	image.convertTo(image, CV_8U);
-	//cv::Mat image_lines = get_image_lines(image);
-	//cv::imshow("Image", image);
-	//cv::waitKey(0); // Wait for a key press to close the window
-	//cv::imshow("lines", image_lines);
-	//cv::waitKey(0); // Wait for a key press to close the window
-
-	//std::vector<std::pair<Rune, cv::Rect>> detected_runes_zones;
 	std::vector<RuneZone> detected_runes_zones;
 
 	// detect word in image
-	for(const auto& [key, rune_image] : m_rune_images) {
+	for (const auto& [key, pattern_image_original] : m_rune_images) {
 
 		auto word = Word(key);
-		std::cout << "Try to find word: " << word.get_hash() << std::endl;
-		cv::imshow("Try to find word : " + word.get_hash(), rune_image);
-		cv::waitKey(0); // Wait for a key press to close the window
 
-		double rune_area = rune_image.rows * rune_image.cols;
+		generate_scale_factors(pattern_image_original, image, scale_factors);
 
-		displayMatProperties(rune_image, "Rune Image: " + word.get_hash());
-		displayMatProperties(image, "Image");
-
-		// Create the result matrix
-		int result_cols = image.cols - rune_image.cols + 1;
-		int result_rows = image.rows - rune_image.rows + 1;
-		cv::Mat result;
-		result.create(result_rows, result_cols, CV_32FC1); // Result is float type
-
-		cv::matchTemplate(image, rune_image, result, cv::TM_CCOEFF_NORMED);
-
-		for (int i = 2; i < result_cols-2;i++) {
-			for (int j = 2; j < result_rows-2; j++) {
-				if( result.at<float>(j, i) > 0.8) {
-					//std::cout << "Match found at (" << i << ", " << j << ") with value: " 
-					//	<< result.at<float>(i, j) << std::endl;
-
-					cv::Rect bounding_box = cv::Rect(i,j,rune_image.cols,rune_image.rows);
-					cv::rectangle(image, bounding_box, cv::Scalar(255), 2);
-					detected_runes_zones.push_back({ word, bounding_box });
-				} 
-				//else {
-				//	std::cout << "No match at (" << i << ", " << j << ") with value: " 
-				//		<< result.at<float>(i, j) << std::endl;
-				//}
+		for (const auto& scale_factor : scale_factors) {
+			// Resize the rune image to the current scale factor
+			cv::Mat pattern_image;
+			cv::resize(pattern_image_original, pattern_image, cv::Size(), scale_factor, scale_factor, (scale_factor > 1.0f ? cv::INTER_LINEAR : cv::INTER_AREA));
+			if (pattern_image.empty()) {
+				std::cerr << "Error: Resized rune image is empty for word: " << word.get_hash() << std::endl;
+				continue;
 			}
-			std::cout << std::endl;
+			// Check if the resized rune image is larger than the original image
+			if (pattern_image.rows > image.rows || pattern_image.cols > image.cols) {
+				std::cerr << "Error: Resized rune image is larger than the original image for word: " << word.get_hash() << std::endl;
+				continue;
+			}
+
+
+			if (debug_mode) {
+				displayMatProperties(pattern_image, "Pattern: " + word.get_hash());
+				//displayMatProperties(image, "Image");
+
+				std::cout << "Try to find word: " << word.get_hash() << std::endl;
+				cv::imshow("Try to find word : " + word.get_hash(), pattern_image);
+			}
+
+			double pattern_area = pattern_image.rows * pattern_image.cols;
+
+			// Create the result matrix
+			int result_cols = image.cols - pattern_image.cols + 1;
+			int result_rows = image.rows - pattern_image.rows + 1;
+			cv::Mat result;
+			result.create(result_rows, result_cols, CV_32FC1); // Result is float type
+
+			cv::matchTemplate(image, pattern_image, result, cv::TM_CCOEFF_NORMED);
+
+			for (int i = 2; i < result_cols - 2; i++) {
+				for (int j = 2; j < result_rows - 2; j++) {
+					if (result.at<float>(j, i) > 0.8) {
+						cv::Rect bounding_box = cv::Rect(i, j, pattern_image.cols, pattern_image.rows);
+						detected_runes_zones.push_back({ word, bounding_box });
+						if (debug_mode) {
+							//std::cout << "Match found at (" << i << ", " << j << ") with value: " 
+							//	<< result.at<float>(j, i) << std::endl;
+							cv::rectangle(original_img, bounding_box, cv::Scalar(255), 1);
+						}
+					}
+				}
+				std::cout << std::endl;
+			}
+
+			if (debug_mode) {
+				cv::imshow("Detected Runes", original_img);
+				cv::waitKey(300); // Wait for a key press to close the window
+				cv::destroyAllWindows();
+			}
 		}
-
-		cv::imshow("Detected Runes", image);
-		cv::waitKey(0); // Wait for a key press to close the window
 	}
-
 
 	// Sort the character zones
 	std::sort(detected_runes_zones.begin(), detected_runes_zones.end(), compareCharacterZones);
@@ -316,4 +425,56 @@ void RuneDetector::displayMatProperties(const cv::Mat& mat, const std::string& n
 	}
 
 	std::cout << "--------------------------" << std::endl;
+}
+
+bool RuneDetector::generate_scale_factors(const cv::Mat& image, const cv::Mat& pattern, std::vector<double>& scale_factors)
+{
+	// TODO: improve this method to use the size of the rune in the image to determine the scale factors
+	int nb_values = 10;
+	
+	// simple method
+	double min_factor = 0.15; // half size of the pattern
+	double max_factor = 1;   // 4 times pattern size
+
+	// ellaborated method
+	//scale_factors.clear();
+	//if (image.empty() || pattern.empty()) {
+	//	std::cerr << "Error: One of the images is empty." << std::endl;
+	//	return false;
+	//}
+
+	//// min size: 
+	//// - a page of the manual: 1680x1280 pixels 
+	//// - the smallest rune on the page: 18x36 pixels
+	//// -> min width factor: 18 / 1680 = 0,0107142857142857
+	//// -> min height factor: 36 / 1280 = 0,028125
+
+	//// max size:
+	//// - close up of the in-game popup: 298x53 pixels
+	//// - the biggest rune on the popup: 18x31 pixels
+	//// -> max width ratio: 298 / 18 = 16,55555555555556
+	//// -> max height ration: 53 / 31 = 0,5849056603773585
+
+
+	//// pattern is always on one line, so we can use it to determine the width of a single rune
+	//auto single_rune_width = static_cast<double>(pattern.rows) * 18.0f / 32.0f; // average height / width ratio of the rune
+
+	//auto runne_image_ratio = static_cast<double>(image.cols) / single_rune_width;
+
+	//const double min_factor = 0.01 * runne_image_ratio; // Minimum scale factor
+	//const double max_factor = 0.06 * runne_image_ratio; // Maximum scale factor
+
+	// Calculate the base for the exponential growth
+		// We want min_factor * (ratio^S) = max_factor
+		// So, ratio^S = max_factor / min_factor
+		// ratio = (max_factor / min_factor)^(1/nb_values)
+	double ratio = std::pow(max_factor / min_factor, 1.0 / nb_values);
+
+	// Generate the sequence
+	for (int i = 0; i <= nb_values; ++i) {
+		double scale_factor = min_factor * std::pow(ratio, i);
+		scale_factors.push_back(scale_factor);
+	}
+
+	return true;
 }

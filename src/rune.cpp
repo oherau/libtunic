@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <opencv2/imgproc.hpp>
 
 Rune::Rune(unsigned long bin) : m_rune(bin)
 {}
@@ -104,7 +105,41 @@ std::string Rune::to_string(unsigned long bin) const {
 	case RUNE_CONSONANT_ZH: return "ZH";
     }
     return "";
-} 
+}
+
+void Rune::draw_segment(const std::initializer_list<cv::Point2d>& segment, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const
+{
+	if (segment.size() < 2) return; // Ensure there are at least two points to draw a line
+	// Create a vector of points from the initializer list
+	std::vector<cv::Point2d> points(segment);
+	// Scale the points based on the size provided
+	for (auto& point : points) {
+		point.x = x + point.x * size.width / 100; // Assuming points are in percentage
+		point.y = y + point.y * size.height / 100; // Assuming points are in percentage
+	}
+	// Draw the line segment on the output image
+	cv::line(output_image, points[0], points[1], cv::Scalar(255, 255, 255), tickness); // White color
+}
+
+void Rune::draw_circle(const std::initializer_list<cv::Point2d>& radius, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const
+{
+	if(radius.size() < 1) return; // Ensure there is at least one point to draw a circle
+	// Create a vector of points from the initializer list
+	std::vector<cv::Point2d> points(radius);
+	// Scale the points based on the size provided
+	for (auto& point : points) {
+		point.x = x + point.x * size.width / 100; // Assuming points are in percentage
+		point.y = y + point.y * size.height / 100; // Assuming points are in percentage
+	}
+	// Scale the radius based on the size provided
+	double dx = points[0].x - points[1].x;
+	double dy = points[0].y - points[1].y;
+	auto radius_length = std::sqrt(dx * dx + dy * dy) - 0.5 * tickness;
+
+	// Draw the circle on the output image
+	cv::circle(output_image, points[0], radius_length, cv::Scalar(255, 255, 255), tickness); // White color with thickness of 2
+}
+
 
 std::string Rune::to_pseudophonetic() const {
     if(m_rune == RUNE_NULL)
@@ -147,5 +182,30 @@ bool Rune::from_hexa(const std::string& hexString)
 
     m_rune = value; // Set the rune value
     return true;
+}
+
+bool Rune::generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image) const {
+
+
+	// alway draw the separator segment
+	draw_segment(RUNE_SEGMENT_SEP, tickness, x, y, size, output_image);
+
+	if (m_rune & (0x1 << 0)) draw_segment(RUNE_SEGMENT_01, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 1)) draw_segment(RUNE_SEGMENT_02, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 2)) draw_segment(RUNE_SEGMENT_03, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 3)) draw_segment(RUNE_SEGMENT_04, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 4)) draw_segment(RUNE_SEGMENT_05, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 5)) draw_segment(RUNE_SEGMENT_06, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 7)) draw_segment(RUNE_SEGMENT_08, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 8)) draw_segment(RUNE_SEGMENT_09, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 9)) draw_segment(RUNE_SEGMENT_10, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 10)) draw_segment(RUNE_SEGMENT_11, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 11)) draw_segment(RUNE_SEGMENT_12, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 12)) draw_segment(RUNE_SEGMENT_13, tickness, x, y, size, output_image);
+	if (m_rune & (0x1 << 13)) draw_segment(RUNE_SEGMENT_14, tickness, x, y, size, output_image);
+
+	if (m_rune & (0x1 << 15)) draw_circle(RUNE_RADIUS_16, tickness, x, y, size, output_image);
+
+	return true;
 }
 

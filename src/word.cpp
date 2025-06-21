@@ -1,5 +1,6 @@
 #include "word.h"
 #include "dictionary.h"
+#include <opencv2/opencv.hpp>
 
 Word::Word(const std::string& str)
 {
@@ -59,5 +60,27 @@ bool Word::parse_runes(const std::string& str, std::vector<Rune>& runes)
 		}
 	}
 
+	return true;
+}
+
+
+bool Word::generate_image(cv::Size2i rune_size, int tickness, cv::Mat& output_image) const {
+	if (m_runes.empty()) {
+		return false;
+	}
+
+	int height = rune_size.height + 2 * tickness;
+	int width = rune_size.width * m_runes.size() + 2 * tickness; // TODO: substract extra right margin (scaled)
+
+	cv::Mat image(height, width, CV_8U, cv::Scalar(0));
+
+	int x = tickness;
+	int y = tickness;
+	for (const auto& rune : m_runes) {
+ 		rune.generate_image(x, y, rune_size, tickness, image);
+		x += rune_size.width; // TODO: substract right margin (scaled) to make right edge of current rune connected to the left edgde of next rune 
+
+	}
+	image.copyTo(output_image);
 	return true;
 }

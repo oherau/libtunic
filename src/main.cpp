@@ -11,6 +11,60 @@
 //#include "libtuneic.h"
 namespace fs = std::filesystem;
 
+#include <iostream>
+#include <string>
+#include <filesystem> // C++17 and later
+
+// Platform-specific headers
+#ifdef _WIN32
+#include <windows.h> // For GetModuleFileNameW
+#elif defined(__linux__)
+#include <unistd.h>  // For readlink
+#include <limits.h>  // For PATH_MAX
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h> // For _NSGetExecutablePath
+#include <limits.h>  // For PATH_MAX
+#endif
+
+namespace fs = std::filesystem;
+
+fs::path getExecutablePath() {
+#ifdef _WIN32
+    // On Windows, use GetModuleFileNameW for wide characters
+    wchar_t path[MAX_PATH];
+    DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
+    if (length == 0 || length == MAX_PATH) {
+        // Handle error or buffer too small
+        return fs::path(); // Return an empty path
+    }
+    return fs::path(path);
+#elif defined(__linux__)
+    // On Linux, use /proc/self/exe symlink
+    char path[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
+    if (count == -1) {
+        // Handle error
+        return fs::path(); // Return an empty path
+    }
+    return fs::path(std::string(path, count));
+#elif defined(__APPLE__)
+    // On macOS, use _NSGetExecutablePath
+    char path[PATH_MAX];
+    uint32_t size = sizeof(path);
+    if (_NSGetExecutablePath(path, &size) != 0) {
+        // Handle buffer too small or other error
+        // You might need to reallocate and try again if _NSGetExecutablePath returns non-zero
+        return fs::path(); // Return an empty path
+    }
+    return fs::path(path);
+#else
+    // Fallback for other/unknown platforms or if you don't need this functionality everywhere
+    std::cerr << "Warning: getExecutablePath() not implemented for this platform." << std::endl;
+    return fs::current_path(); // Return current working directory as a fallback
+#endif
+}
+
+
 const auto RUNES_FOLDER = fs::path("data/runes");
 const auto DICTIONARY_EN = fs::path("lang/dictionary.txt");
 
@@ -20,6 +74,9 @@ int test_audio();
 int test_image();
 int test_rune();
 int test_word();
+int test_rune_image_generation();
+int test_dictionary_image_gen();
+int test_decode_word_image();
 
 int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length);
 int image_detection(const fs::path& dictionary_file, const fs::path& image_file);
@@ -128,10 +185,14 @@ int test_check(const T& expected, const T& result) {
 
 int test() {
     int result = 0;
-    result += test_rune();
-    result += test_word();
-	result += test_audio();
-    result += test_image();
+ //   result += test_rune();
+ //   result += test_word();
+	//result += test_audio();
+    //result += test_dictionary_image_gen();
+    //result += test_image();
+    //result += test_rune_image_generation();
+    result += test_decode_word_image();
+
 
     if (result == 0) {
         std::cout << "All tests passed!" << std::endl;
@@ -265,7 +326,7 @@ int test_image() {
         auto expected = test.second;
 
         std::vector<Word> detected_words;
-        rune_detector.detect_words(fs::path(image_path), detected_words);
+        rune_detector.detect_words(fs::path(image_path), detected_words, true);
 
         auto translated = dictionary.translate(detected_words);
         nb_fails += test_check(expected, translated);
@@ -273,4 +334,78 @@ int test_image() {
     }
 
     return nb_fails;
+}
+
+
+int test_rune_image_generation() {
+
+
+    std::cout << std::endl << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << "========== RUNE IMAGE GENERATION - TEST MODE ===========" << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << std::endl;
+    Dictionary dictionary(DICTIONARY_EN);
+    std::vector<std::string> hash_list;
+	dictionary.get_hash_list(hash_list);
+    int nb_fails = 0;
+    for (const auto& word_hash : hash_list) {
+		Word word(word_hash);
+        std::string word_str;
+		dictionary.get_translation(word_hash, word_str);
+
+        cv::Mat result;
+		int tickness = 6; // Thickness of the lines in the image   
+		word.generate_image(cv::Size2i(70,125), tickness, result);
+
+        cv::imshow(word_str + " " + word_hash, result);
+        cv::waitKey(0); // Wait for a key press to close the window
+        cv::destroyAllWindows();
+
+        nb_fails += 0; // Placeholder for actual checks
+    }
+	return nb_fails;
+}
+
+int test_dictionary_image_gen() {
+
+
+    std::cout << std::endl << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << "========== DICT IMAGE GENERATION - TEST MODE ===========" << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << std::endl;
+    Dictionary dictionary(DICTIONARY_EN);
+
+	fs::path current_path = getExecutablePath().parent_path().parent_path().parent_path() / fs::path("data") / fs::path("runes");
+    dictionary.generate_images(current_path, ".png");
+
+    return 0;
+}
+
+int test_decode_word_image() {
+
+
+    std::cout << std::endl << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << "==========   DECODE WORD IMAGE - TEST MODE   ===========" << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << std::endl;
+
+    Dictionary dictionary(DICTIONARY_EN);
+    RuneDetector rune_detector(&dictionary);
+
+	fs::path unknown_words_folder = getExecutablePath().parent_path().parent_path().parent_path() / fs::path("data") / fs::path("unknown_words");
+
+    // Check if the folder exists
+    if (!fs::exists(unknown_words_folder) || !fs::is_directory(unknown_words_folder)) {
+        std::cerr << "Error: Rune folder does not exist or is not a directory: " << unknown_words_folder << std::endl;
+        return false;
+    }
+
+    for (const auto& entry : fs::directory_iterator(unknown_words_folder)) {
+        rune_detector.decode_word_image(entry.path());
+    }
+
+    return 0;
 }

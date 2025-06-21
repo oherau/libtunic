@@ -9,6 +9,7 @@
 #include <algorithm> // For std::count_if
 #include <cctype>    // For std::isalnum
 #include <cmath> // For std::max and std::min
+#include <opencv2/opencv.hpp>
 
 Dictionary::Dictionary(const fs::path& filePath) {
     load(filePath);
@@ -107,6 +108,31 @@ bool Dictionary::add_word(const std::string& word, const std::string& translatio
     return true;
 }
 
+bool Dictionary::get_hash_list(std::vector<std::string>& hash_list) const
+{
+    for(const auto& [key, value] : m_hashtable) {
+        hash_list.push_back(key);
+	}
+    return true;
+}
+
+bool Dictionary::get_word_list(std::vector<std::string>& hash_list) const
+{
+    for (const auto& [key, value] : m_hashtable) {
+        hash_list.push_back(value);
+    }
+    return true;
+}
+
+bool Dictionary::get_translation(const std::string& word, std::string& translation) const
+{
+	if(m_hashtable.contains(word)) {
+        translation = m_hashtable.at(word);
+        return true;
+    }
+	return false;
+}
+
 std::string Dictionary::translate(const std::string& str) {
 
     if(m_hashtable.contains(str))
@@ -193,4 +219,51 @@ std::string Dictionary::translate(const std::vector<Word>& words) {
     }
 
     return std::string(ss.str());
+}
+
+bool Dictionary::generate_images(const fs::path& image_dir, std::string extension) const
+{
+    if(image_dir.empty() || !fs::exists(image_dir) || !fs::is_directory(image_dir)) {
+        std::cerr << "Error: Invalid image directory path." << std::endl;
+        return false;
+	}
+
+    for (const auto& [word_hash, word_str] : m_hashtable) {
+        Word word(word_hash);
+
+        cv::Mat image;
+        int tickness = 8;
+        auto rune_size = cv::Size2i(70, 130);
+        word.generate_image(rune_size, tickness, image);
+
+		// for debugging purposes, display the image
+        //cv::imshow(word_str + " " + word_hash, result);
+        //cv::waitKey(0); // Wait for a key press to close the window
+        //cv::destroyAllWindows();
+
+        std::string filename = word_hash + "_" + word_str + extension;
+		fs::path filepath = image_dir / filename;
+
+        bool success = false;
+        if(extension == ".png") {
+            success = cv::imwrite(filepath.string(), image);
+        } else if(extension == ".jpg" || extension == ".jpeg") {
+            std::vector<int> compression_params;
+            compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
+            compression_params.push_back(95); // Set quality to 95 (out of 100)
+            success = cv::imwrite(filepath.string(), image, compression_params);
+        } else {
+            std::cerr << "Error: Unsupported image format. Use .png or .jpg." << std::endl;
+            return false;
+		}
+
+        if (success) {
+            std::cout << "Image saved successfully as: " << filepath << std::endl;
+        }
+        else {
+            std::cerr << "Error: Could not save image as " << filepath << std::endl;
+        }
+    }
+
+    return true;
 }

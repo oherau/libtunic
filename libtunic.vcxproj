@@ -22,7 +22,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{98A6C901-6522-48C3-9E2C-D9B22A638506}</ProjectGuid>
-    <RootNamespace>libtunic2</RootNamespace>
+    <RootNamespace>libtunic</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
