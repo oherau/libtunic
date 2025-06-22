@@ -12,6 +12,7 @@ public:
 	std::string get_hash() const;
 	std::string to_pseudophonetic() const;
 	bool parse_runes(const std::string& str, std::vector<Rune>& runes);
+	bool decode_image(const cv::Mat& word_image);
 	size_t size() const { return m_runes.size(); }
 	bool generate_image(cv::Size2i rune_size, int tickness, cv::Mat& output_image) const;
 private:

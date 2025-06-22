@@ -85,8 +85,6 @@ const cv::Point2d RUNE_POINT_L(0.00f, 57.77f);
 const cv::Point2d RUNE_POINT_M(50.00f, 95.00f);
 
 
-
-
 const auto RUNE_SEGMENT_01 = { RUNE_POINT_A, RUNE_POINT_D };
 const auto RUNE_SEGMENT_02 = { RUNE_POINT_A, RUNE_POINT_B };
 const auto RUNE_SEGMENT_03 = { RUNE_POINT_C, RUNE_POINT_D };
@@ -94,6 +92,8 @@ const auto RUNE_SEGMENT_04 = { RUNE_POINT_B, RUNE_POINT_C };
 const auto RUNE_SEGMENT_05 = { RUNE_POINT_D, RUNE_POINT_E };
 const auto RUNE_SEGMENT_06 = { RUNE_POINT_A, RUNE_POINT_C };
 const auto RUNE_SEGMENT_08 = { RUNE_POINT_C, RUNE_POINT_F };
+
+const auto RUNE_SEGMENT_SEP = { RUNE_POINT_E, RUNE_POINT_G };
 
 const auto RUNE_SEGMENT_09 = { RUNE_POINT_H, RUNE_POINT_K };
 const auto RUNE_SEGMENT_10 = { RUNE_POINT_H, RUNE_POINT_I };
@@ -104,7 +104,11 @@ const auto RUNE_SEGMENT_14 = { RUNE_POINT_H, RUNE_POINT_J };
 
 const auto RUNE_RADIUS_16 = { RUNE_POINT_M, RUNE_POINT_J };
 
-const auto RUNE_SEGMENT_SEP = { RUNE_POINT_E, RUNE_POINT_G };
+// in percent relative to height of the rune image (ex: height=130px  tickness=130*factor=6px)
+const auto RUNE_SEGMENT_DEFAULT_TICKNESS = 0.09;
+
+//const auto RUNE_DEFAULT_SIZE = cv::Size2i(50, 100); // Default size of the rune image
+const auto RUNE_DEFAULT_SIZE = cv::Size2i(70, 130); // Default size of the rune image
 
 
 // MASKS
@@ -172,7 +176,7 @@ public:
 	std::string to_hexa() const;
 	bool from_hexa(const std::string& hexString);
     bool generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image) const;
-    
+    bool decode_image(const cv::Mat& image);
 	//operator overloads
     Rune operator+(const Rune& other) const { return Rune(m_rune | other.m_rune);}
 	bool operator<(const Rune& other) const { return m_rune < other.m_rune; }

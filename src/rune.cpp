@@ -4,58 +4,14 @@
 #include <sstream>
 #include <iomanip>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <runedetector.h>
 
 Rune::Rune(unsigned long bin) : m_rune(bin)
 {}
 
 Rune::Rune(const Rune& rune) : m_rune(rune.m_rune)
 {}
-//
-//Rune::Rune(std::string name)
-//{
-//         if (name == "RUNE_VOWEL_A")     m_rune = RUNE_VOWEL_A;
-//    else if (name == "RUNE_VOWEL_I")     m_rune = RUNE_VOWEL_I;
-//    else if (name == "RUNE_VOWEL_E")     m_rune = RUNE_VOWEL_E;
-//    else if (name == "RUNE_VOWEL_OO_O")  m_rune = RUNE_VOWEL_OO_O;
-//    else if (name == "RUNE_VOWEL_ER")    m_rune = RUNE_VOWEL_ER;
-//    else if (name == "RUNE_VOWEL_EE")    m_rune = RUNE_VOWEL_EE;
-//    else if (name == "RUNE_VOWEL_OO_U")  m_rune = RUNE_VOWEL_OO_U;
-//    else if (name == "RUNE_VOWEL_IR")    m_rune = RUNE_VOWEL_IR;
-//    else if (name == "RUNE_VOWEL_OOR")   m_rune = RUNE_VOWEL_OOR;
-//    else if (name == "RUNE_VOWEL_AR")    m_rune = RUNE_VOWEL_AR;
-//    else if (name == "RUNE_VOWEL_ERE")   m_rune = RUNE_VOWEL_ERE;
-//    else if (name == "RUNE_VOWEL_AI")    m_rune = RUNE_VOWEL_AI;
-//    else if (name == "RUNE_VOWEL_Y")     m_rune = RUNE_VOWEL_Y;
-//    else if (name == "RUNE_VOWEL_U")     m_rune = RUNE_VOWEL_U;
-//    else if (name == "RUNE_VOWEL_OW_H")  m_rune = RUNE_VOWEL_OW_H;
-//    else if (name == "RUNE_VOWEL_OW_S")  m_rune = RUNE_VOWEL_OW_S;
-//    else if (name == "RUNE_VOWEL_AIR")   m_rune = RUNE_VOWEL_AIR;
-//    // Consonants
-//    else if (name == "RUNE_CONSONANT_B")     m_rune = RUNE_CONSONANT_B;
-//    else if (name == "RUNE_CONSONANT_CH")    m_rune = RUNE_CONSONANT_CH;
-//    else if (name == "RUNE_CONSONANT_D")     m_rune = RUNE_CONSONANT_D;
-//    else if (name == "RUNE_CONSONANT_F")     m_rune = RUNE_CONSONANT_F;
-//    else if (name == "RUNE_CONSONANT_G")     m_rune = RUNE_CONSONANT_G;
-//    else if (name == "RUNE_CONSONANT_H")     m_rune = RUNE_CONSONANT_H;
-//    else if (name == "RUNE_CONSONANT_J")     m_rune = RUNE_CONSONANT_J;
-//    else if (name == "RUNE_CONSONANT_K")     m_rune = RUNE_CONSONANT_K;
-//    else if (name == "RUNE_CONSONANT_L")     m_rune = RUNE_CONSONANT_L;
-//    else if (name == "RUNE_CONSONANT_M")     m_rune = RUNE_CONSONANT_M;
-//    else if (name == "RUNE_CONSONANT_N")     m_rune = RUNE_CONSONANT_N;
-//    else if (name == "RUNE_CONSONANT_NG")    m_rune = RUNE_CONSONANT_NG;
-//    else if (name == "RUNE_CONSONANT_P")     m_rune = RUNE_CONSONANT_P;
-//    else if (name == "RUNE_CONSONANT_R")     m_rune = RUNE_CONSONANT_R;
-//    else if (name == "RUNE_CONSONANT_S")     m_rune = RUNE_CONSONANT_S;
-//    else if (name == "RUNE_CONSONANT_SH")    m_rune = RUNE_CONSONANT_SH;
-//    else if (name == "RUNE_CONSONANT_T")     m_rune = RUNE_CONSONANT_T;
-//    else if (name == "RUNE_CONSONANT_TH_S")  m_rune = RUNE_CONSONANT_TH_S;
-//    else if (name == "RUNE_CONSONANT_TH_Z")  m_rune = RUNE_CONSONANT_TH_Z;
-//    else if (name == "RUNE_CONSONANT_V")     m_rune = RUNE_CONSONANT_V;
-//    else if (name == "RUNE_CONSONANT_W")     m_rune = RUNE_CONSONANT_W;
-//    else if (name == "RUNE_CONSONANT_Y")     m_rune = RUNE_CONSONANT_Y;
-//    else if (name == "RUNE_CONSONANT_Z")     m_rune = RUNE_CONSONANT_Z;
-//	else if (name == "RUNE_CONSONANT_ZH")    m_rune = RUNE_CONSONANT_ZH;
-//}
 
 std::string Rune::to_string(unsigned long bin) const {
 
@@ -209,3 +165,148 @@ bool Rune::generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& 
 	return true;
 }
 
+
+bool Rune::decode_image(const cv::Mat& rune_image)
+{
+	bool result = true;
+	auto height = rune_image.rows;
+	auto width = rune_image.cols;
+	m_rune = 0;
+
+	cv::Mat binary_image;
+	cv::threshold(rune_image, binary_image, 100, 255, cv::THRESH_BINARY);
+	cv::imshow("Binary Image (Line Isolated)", binary_image);
+
+	//cv::waitKey(00); // Wait for a key press to close the window
+	//cv::destroyAllWindows();
+
+	// Find the Row with the Most White Pixels
+	long long max_white_pixels_in_row = 0;
+	int best_y_pos_top = -1; // Top-most y-coordinate of the thick line
+	int best_y_pos_bottom = -1; // Bottom-most y-coordinate of the thick line
+	double WHITE_SEP_PERCENT_THRESOLD = 0.95;
+
+	// Iterate through each row of the binary image
+	for (int y = 0; y < binary_image.rows; ++y) {
+		// Get a pointer to the current row's data for efficiency
+		const uchar* row_ptr = binary_image.ptr<uchar>(y);
+		long long current_row_white_pixels = 0;
+
+		// Count white pixels (where value is 255) in the current row
+		for (int x = 0; x < binary_image.cols; ++x) {
+			if (row_ptr[x] == 255) {
+				current_row_white_pixels++;
+			}
+		}
+
+		if (current_row_white_pixels > max_white_pixels_in_row) {
+			max_white_pixels_in_row = current_row_white_pixels;
+		}
+
+		// If this row has a significant amount of white pixels (e.g., > 90% of width)
+		// AND we haven't started detecting the line yet, mark it as the top.
+		// This threshold (0.1) can be adjusted.
+		if (current_row_white_pixels > (binary_image.cols * WHITE_SEP_PERCENT_THRESOLD) && best_y_pos_top == -1) {
+			best_y_pos_top = y;
+		}
+		// If this row has fewer white pixels than the threshold AND we have started detecting,
+		// it means we've passed the bottom of the line.
+		if (current_row_white_pixels <= (binary_image.cols * WHITE_SEP_PERCENT_THRESOLD) && best_y_pos_top != -1 && best_y_pos_bottom == -1) {
+			best_y_pos_bottom = y;
+		}
+	}
+
+	// Handle case where line goes to the bottom of the image
+	if (best_y_pos_top != -1 && best_y_pos_bottom == -1) {
+		best_y_pos_bottom = binary_image.rows - 1;
+
+		// no separation line found
+	}
+
+	int line_height = 0;
+	int line_center_y = 0;
+	if (best_y_pos_top != -1 && best_y_pos_bottom != -1) {
+		// Top-left Y of the line region
+		int line_top_y = best_y_pos_top;
+		// Height of the detected line region
+		line_height = best_y_pos_bottom - best_y_pos_top + 1;
+		// Center Y position of the line
+		line_center_y = line_top_y + line_height / 2;
+	}
+
+
+	// 2. Calculate the origin point for the rune segments based on separator position
+	// point E is the left point of the horizontal separator
+	auto dx = 0 ;
+	auto dy = line_center_y - (0.01 * RUNE_POINT_E.y * height) - (RUNE_SEGMENT_DEFAULT_TICKNESS * width);
+
+	// put original image to a bigger one with black background and borders
+	// this is needed to avoid problems with matching the rune segments
+	cv::Mat rune_image_with_borders(2*height, 2*width, CV_8UC1, cv::Scalar(0));
+	cv::Rect paste_zone(0.5 * width + dx, 0.5 * height + dy, width, height);
+
+	rune_image.copyTo(rune_image_with_borders(paste_zone)); // Copy source image into the ROI of the destination
+
+	//cv::imshow("Result using copyTo()", rune_image_with_borders);
+	//cv::waitKey(0); // Wait for a key press to close the window
+
+
+ 	for(int shift = 0; shift < 16; ++shift) {
+
+		if(shift == 6 || shift == 14) {
+			// no segments for these bits
+			continue;
+		}
+
+		// generate a segment mask (greater tickeness for better detection)
+		cv::Mat rune_filter_mask(2*height, 2*width, CV_8UC1, cv::Scalar(0));
+		cv::Mat rune_detection_mask(2*height, 2*width, CV_8UC1, cv::Scalar(0));
+		unsigned long rune_bit = (0x1 << shift);
+		Rune rune_part = Rune(rune_bit);
+		rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DEFAULT_TICKNESS * height, rune_filter_mask);
+		rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DEFAULT_TICKNESS * height, rune_detection_mask);
+
+		//cv::imshow("rune_filter_mask", rune_filter_mask);
+		//cv::imshow("rune_detection_mask", rune_detection_mask);
+		//cv::waitKey(300); // Wait for a key press to close the window
+		//cv::destroyAllWindows();
+
+		cv::Mat filtered_result;
+		cv::bitwise_and(rune_image_with_borders, rune_image_with_borders, filtered_result, rune_filter_mask);
+		//cv::imshow("filtered_result", filtered_result);
+
+		cv::Mat result_match;
+		cv::matchTemplate(filtered_result, rune_detection_mask, result_match, cv::TM_CCOEFF_NORMED);
+
+		double minVal, maxVal;
+		cv::Point minLoc, maxLoc;
+		cv::minMaxLoc(result_match, &minVal, &maxVal, &minLoc, &maxLoc);
+
+		// The top-left corner of the best match
+		cv::Point matchLoc = maxLoc; // For TM_CCOEFF_NORMED, maxVal indicates best match
+
+		std::cout << "Best match correlation: " << maxVal << std::endl;
+		std::cout << "Best match location (top-left): " << matchLoc << std::endl;
+
+
+		if(maxVal >= RUNE_DETECTION_THRESHOLD) {
+			std::cout << "Pattern detected!" << std::endl;
+			m_rune |= rune_bit; // Set the corresponding bit in m_rune
+		}
+
+
+		cv::imshow("rune_filter_mask", rune_filter_mask);
+		cv::imshow("rune_detection_mask", rune_detection_mask);
+		cv::imshow("rune_image", rune_image);
+		cv::imshow("rune_image_with_borders", rune_image_with_borders);
+		cv::imshow("rune_filter_mask", rune_filter_mask);
+		cv::imshow("rune_detection_mask", rune_detection_mask);
+
+		cv::imshow("filtered_result", filtered_result);
+
+		cv::waitKey(300); // Wait for a key press to close the window
+		cv::destroyAllWindows();
+	}
+
+	return (m_rune != 0);
+}

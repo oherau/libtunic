@@ -355,8 +355,10 @@ int test_rune_image_generation() {
 		dictionary.get_translation(word_hash, word_str);
 
         cv::Mat result;
-		int tickness = 6; // Thickness of the lines in the image   
-		word.generate_image(cv::Size2i(70,125), tickness, result);
+		auto rune_size = RUNE_DEFAULT_SIZE; // Size of the rune image
+        int tickness = RUNE_SEGMENT_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image 
+		word.generate_image(rune_size, tickness, result);
+  
 
         cv::imshow(word_str + " " + word_hash, result);
         cv::waitKey(0); // Wait for a key press to close the window
@@ -404,8 +406,27 @@ int test_decode_word_image() {
     }
 
     for (const auto& entry : fs::directory_iterator(unknown_words_folder)) {
-        rune_detector.decode_word_image(entry.path());
-    }
+        Word decoded_word;
+        rune_detector.decode_word_image(entry.path(), decoded_word);
+
+        cv::Mat detected_word_img;
+        cv::Size rune_size = RUNE_DEFAULT_SIZE;
+        int tickness = RUNE_SEGMENT_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image
+
+        if (decoded_word.generate_image(rune_size, tickness, detected_word_img)) {
+
+            auto decoded_word_str = decoded_word.to_pseudophonetic();
+            auto decoded_word_hash = decoded_word.get_hash();
+
+            cv::imshow("Decoded word: " + decoded_word_hash + " " + decoded_word_str, detected_word_img);
+
+            cv::waitKey(0); // Wait for a key press to close the window
+            cv::destroyAllWindows();
+        }
+        else {
+            std::cerr << "Error: Could not decode word image: " << entry.path() << std::endl;
+            }
+        }
 
     return 0;
 }

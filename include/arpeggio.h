@@ -86,12 +86,6 @@ const auto ARPEGGIO_VOWEL_EER       = NOTE_G2 | NOTE_C3; // beer
 class Arpeggio {
 public:
     Arpeggio() = default;
-    Arpeggio(unsigned long vowel,  unsigned long consonant, bool reverse);
-    unsigned long vowel = 0;
-    unsigned long consonant = 0;
-    bool reverse = false;
-    std::string to_string();
-    std::string to_string(unsigned long elem);
 };
 
 #endif // __ARPEGGIO_H__

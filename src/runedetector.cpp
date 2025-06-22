@@ -77,23 +77,17 @@ bool RuneDetector::register_word_image(const fs::path& word_image)
 	return true;
 }
 
-bool RuneDetector::decode_word_image(const fs::path& word_image)
+bool RuneDetector::decode_word_image(const fs::path& file_path, Word& word)
 {
-	auto original_img = cv::imread(word_image.string(), cv::IMREAD_COLOR_BGR);
-	if (original_img.empty()) {
+	auto word_image = cv::imread(file_path.string(), cv::IMREAD_COLOR_BGR);
+	if (word_image.empty()) {
 		std::cerr << "Error: Could not load rune image from " << word_image << std::endl;
 		return false;
 	}
 
-	//auto result1 = cropBlackBorders(original_img);
-	//auto result2 = get_image_lines(result1);
+	bool result = word.decode_image(word_image);
 
-	//cv::imshow("Detected Runes", result1);
-	//cv::imshow("Detected Runes", result2);
-	//cv::waitKey(0); // Wait for a key press to close the window
-	cv::destroyAllWindows();
-
-	return false;
+	return result;
 }
 
 // Custom comparison function for sorting character zones
@@ -347,6 +341,8 @@ bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& d
 		}
 		std::cout << "\n";
 	}
+
+	return true;
 }
 
 

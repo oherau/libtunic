@@ -80,12 +80,48 @@ bool Dictionary::save(const fs::path& filePath) {
     if(!file.is_open())
         return false;
 
-    std::string line;
-    for(auto const& [wordPhonetic, wordTranslation] : m_hashtable) {
-        file << wordPhonetic << DICT_ENTRY_SEPARATOR << wordTranslation << std::endl;
-    }
-    file.close();
+    //std::string line;
+    //for(auto const& [wordPhonetic, wordTranslation] : m_hashtable) {
+    //    file << wordPhonetic << DICT_ENTRY_SEPARATOR << wordTranslation << std::endl;
+    //}
+    //file.close();
 
+    // 1. Copy map elements to a vector of pairs
+    std::vector<std::pair<std::string, std::string>> vec(m_hashtable.begin(), m_hashtable.end());
+
+    // 2. Sort the vector by values alphanumerically (case-insensitive)
+    std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
+        // Compare values case-insensitively
+        std::string s1 = a.second;
+        std::string s2 = b.second;
+
+        // Using std::lexicographical_compare and std::tolower for robust case-insensitive comparison
+        return std::lexicographical_compare(s1.begin(), s1.end(),
+            s2.begin(), s2.end(),
+            [](char c1, char c2) {
+                return std::tolower(static_cast<unsigned char>(c1)) <
+                    std::tolower(static_cast<unsigned char>(c2));
+            });
+        });
+
+    // 3. Display sorted elements with headers
+    char currentHeaderChar = '\0'; // Initialize with a character that won't match A-Z
+
+    for (const auto& pair : vec) {
+        if (!pair.second.empty()) { // Ensure the string is not empty
+            char firstChar = std::toupper(static_cast<unsigned char>(pair.second[0]));
+
+            if (firstChar != currentHeaderChar) {
+                // New group, print header
+				file << "###### " << firstChar << " ######" << std::endl;
+                currentHeaderChar = firstChar;
+            }
+        }
+
+        file << pair.first << DICT_ENTRY_SEPARATOR << pair.second << std::endl;
+    }
+
+    std::cout << "\n--- End of List ---" << std::endl;
     return true;
 }
 
@@ -100,7 +136,7 @@ bool Dictionary::add_word(const std::string& word, const std::string& translatio
             printf("INFO: word [%s] already exists in the dictionary with the same translation\n", word.c_str());
             return true;
 		}
-        printf("WARNING: word [%s] already exists in the dictionary and translation mismatch ! existing: [%s] new: [%s]\n", word.c_str(), m_hashtable[word], translation);
+        printf("WARNING: word [%s] already exists in the dictionary and translation mismatch ! existing: [%s] new: [%s]\n", word.c_str(), m_hashtable[word].c_str(), translation.c_str());
         return false;
 	}
 	m_hashtable[word] = translation;
@@ -232,8 +268,8 @@ bool Dictionary::generate_images(const fs::path& image_dir, std::string extensio
         Word word(word_hash);
 
         cv::Mat image;
-        int tickness = 8;
-        auto rune_size = cv::Size2i(70, 130);
+        auto rune_size =RUNE_DEFAULT_SIZE;
+        int tickness = RUNE_SEGMENT_DEFAULT_TICKNESS * rune_size.height;
         word.generate_image(rune_size, tickness, image);
 
 		// for debugging purposes, display the image
