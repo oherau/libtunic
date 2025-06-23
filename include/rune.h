@@ -176,8 +176,8 @@ public:
 	std::string to_hexa() const;
 	bool from_hexa(const std::string& hexString);
     bool generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image) const;
-    bool decode_image(const cv::Mat& image);
-	//operator overloads
+    bool decode_image(const cv::Mat& image); 
+    //operator overloads
     Rune operator+(const Rune& other) const { return Rune(m_rune | other.m_rune);}
 	bool operator<(const Rune& other) const { return m_rune < other.m_rune; }
     bool operator==(const Rune& other) const { return m_rune == other.m_rune; }

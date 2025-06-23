@@ -147,6 +147,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClCompile Include="src\notedetector.cpp" />
     <ClCompile Include="src\rune.cpp" />
     <ClCompile Include="src\runedetector.cpp" />
+    <ClCompile Include="src\toolbox.cpp" />
     <ClCompile Include="src\word.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +157,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClInclude Include="include\notedetector.h" />
     <ClInclude Include="include\rune.h" />
     <ClInclude Include="include\runedetector.h" />
+    <ClInclude Include="include\toolbox.h" />
     <ClInclude Include="include\word.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
