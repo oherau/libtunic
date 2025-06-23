@@ -1,4 +1,5 @@
 // Sample code
+#include <opencv2/opencv.hpp> // Includes most common OpenCV functionalities
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -407,7 +408,10 @@ int test_decode_word_image() {
 
     for (const auto& entry : fs::directory_iterator(unknown_words_folder)) {
         Word decoded_word;
-        rune_detector.decode_word_image(entry.path(), decoded_word);
+        if (!rune_detector.decode_word_image(entry.path(), decoded_word)) {
+            std::cerr << "Error: Could not decode word image: " << entry.path() << std::endl;
+			continue; // Skip to the next file if decoding fails
+        }
 
         cv::Mat detected_word_img;
         cv::Size rune_size = RUNE_DEFAULT_SIZE;
@@ -418,15 +422,19 @@ int test_decode_word_image() {
             auto decoded_word_str = decoded_word.to_pseudophonetic();
             auto decoded_word_hash = decoded_word.get_hash();
 
-            cv::imshow("Decoded word: " + decoded_word_hash + " " + decoded_word_str, detected_word_img);
+			std::string original_path = entry.path().string();
+            auto original_img = cv::imread(original_path.c_str(), cv::IMREAD_COLOR_BGR);
+            cv::imshow("Original: ", original_img);
+            cv::imshow("Decoded: " + decoded_word_hash + " " + decoded_word_str, detected_word_img);
 
             cv::waitKey(0); // Wait for a key press to close the window
             cv::destroyAllWindows();
         }
         else {
             std::cerr << "Error: Could not decode word image: " << entry.path() << std::endl;
-            }
         }
+        
+    }
 
     return 0;
 }

@@ -105,7 +105,7 @@ const auto RUNE_SEGMENT_14 = { RUNE_POINT_H, RUNE_POINT_J };
 const auto RUNE_RADIUS_16 = { RUNE_POINT_M, RUNE_POINT_J };
 
 // in percent relative to height of the rune image (ex: height=130px  tickness=130*factor=6px)
-const auto RUNE_SEGMENT_DEFAULT_TICKNESS = 0.09;
+const auto RUNE_SEGMENT_DEFAULT_TICKNESS = 0.06;
 
 //const auto RUNE_DEFAULT_SIZE = cv::Size2i(50, 100); // Default size of the rune image
 const auto RUNE_DEFAULT_SIZE = cv::Size2i(70, 130); // Default size of the rune image
@@ -175,7 +175,7 @@ public:
     std::string to_pseudophonetic() const;
 	std::string to_hexa() const;
 	bool from_hexa(const std::string& hexString);
-    bool generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image) const;
+    bool generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image, bool draw_separator = true) const;
     bool decode_image(const cv::Mat& image); 
     //operator overloads
     Rune operator+(const Rune& other) const { return Rune(m_rune | other.m_rune);}
