@@ -357,7 +357,7 @@ int test_rune_image_generation() {
 
         cv::Mat result;
 		auto rune_size = RUNE_DEFAULT_SIZE; // Size of the rune image
-        int tickness = RUNE_SEGMENT_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image 
+        int tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image 
 		word.generate_image(rune_size, tickness, result);
   
 
@@ -415,7 +415,7 @@ int test_decode_word_image() {
 
         cv::Mat detected_word_img;
         cv::Size rune_size = RUNE_DEFAULT_SIZE;
-        int tickness = RUNE_SEGMENT_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image
+        int tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image
 
         if (decoded_word.generate_image(rune_size, tickness, detected_word_img)) {
 

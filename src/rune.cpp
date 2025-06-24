@@ -106,9 +106,18 @@ std::string Rune::to_pseudophonetic() const {
     unsigned long vowel = RUNE_VOWEL & m_rune;
     bool reverse = RUNE_REVERSE & m_rune;
 
+	std::string pseudophonetic;
     if(reverse)
-        return std::string(Rune::to_string(vowel) + Rune::to_string(consonant));
-    return std::string(Rune::to_string(consonant) + Rune::to_string(vowel));
+		pseudophonetic = std::string(Rune::to_string(vowel) + Rune::to_string(consonant));
+	else
+		pseudophonetic = std::string(Rune::to_string(consonant) + Rune::to_string(vowel));
+
+	if (pseudophonetic.empty()) {
+		return "???";
+	}
+
+	// return corrected pseudophonetic string
+	return pseudophonetic;
 }
 
 std::string Rune::to_hexa() const
@@ -192,7 +201,7 @@ bool Rune::decode_image(const cv::Mat& rune_image)
 	// 2. Calculate the origin point for the rune segments based on separator position
 	// point E is the left point of the horizontal separator
 	auto dx = 0 ;
-	auto dy = line_center_y - (0.01 * RUNE_POINT_E.y * height) - (RUNE_SEGMENT_DEFAULT_TICKNESS * width);
+	auto dy = line_center_y - (0.01 * RUNE_POINT_E.y * height) - (RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * width);
 
 	// put original image to a bigger one with black background and borders
 	// this is needed to avoid problems with matching the rune segments
@@ -217,37 +226,16 @@ bool Rune::decode_image(const cv::Mat& rune_image)
 		cv::Mat rune_detection_mask(2*height, 2*width, CV_8UC1, cv::Scalar(0));
 		unsigned long rune_bit = (0x1 << shift);
 		Rune rune_part = Rune(rune_bit);
-		rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DEFAULT_TICKNESS * height, rune_filter_mask, false);
-		//rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DEFAULT_TICKNESS * height, rune_detection_mask);
-
-		//cv::imshow("rune_filter_mask", rune_filter_mask);
-		//cv::imshow("rune_detection_mask", rune_detection_mask);
-		//cv::waitKey(300); // Wait for a key press to close the window
-		//cv::destroyAllWindows();
+		rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DETECTION_DEFAULT_TICKNESS * height, rune_filter_mask, false);
 
 		cv::Mat filtered_result;
 		cv::bitwise_and(rune_image_with_borders, rune_image_with_borders, filtered_result, rune_filter_mask);
-		//cv::imshow("filtered_result", filtered_result);
-
-		//cv::Mat result_match;
-		//cv::matchTemplate(filtered_result, rune_detection_mask, result_match, cv::TM_CCOEFF_NORMED);
-
-		//double minVal, maxVal;
-		//cv::Point minLoc, maxLoc;
-		//cv::minMaxLoc(result_match, &minVal, &maxVal, &minLoc, &maxLoc);
-
-		//// The top-left corner of the best match
-		//cv::Point matchLoc = maxLoc; // For TM_CCOEFF_NORMED, maxVal indicates best match
-
-		//std::cout << "Best match correlation: " << maxVal << std::endl;
-		//std::cout << "Best match location (top-left): " << matchLoc << std::endl;
 
 		int rune_filter_mask_white_pixel_count_non_zero = cv::countNonZero(rune_filter_mask);
 		int match_mask_white_pixel_count_non_zero = cv::countNonZero(filtered_result);
 		double match = static_cast<double>(match_mask_white_pixel_count_non_zero) / static_cast<double>(rune_filter_mask_white_pixel_count_non_zero);
 
 		if (match >= RUNE_SEGMENT_DETECTION_THRESHOLD) {
-		//if(match >= RUNE_DETECTION_THRESHOLD) {
 			std::cout << "Pattern detected!" << std::endl;
 			m_rune |= rune_bit; // Set the corresponding bit in m_rune
 		}
