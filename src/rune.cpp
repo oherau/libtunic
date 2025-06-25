@@ -188,7 +188,7 @@ bool Rune::decode_image(const cv::Mat& rune_image)
 	cv::threshold(rune_image, binary_image, 100, 255, cv::THRESH_BINARY);
 	cv::imshow("Binary Image (Line Isolated)", binary_image);
 
-	cv::waitKey(00); // Wait for a key press to close the window
+	cv::waitKey(1000); // Wait for a key press to close the window
 	cv::destroyAllWindows();
 
 	int line_center_y = 0;
@@ -226,33 +226,33 @@ bool Rune::decode_image(const cv::Mat& rune_image)
 		cv::Mat rune_detection_mask(2*height, 2*width, CV_8UC1, cv::Scalar(0));
 		unsigned long rune_bit = (0x1 << shift);
 		Rune rune_part = Rune(rune_bit);
-		rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DETECTION_DEFAULT_TICKNESS * height, rune_filter_mask, false);
+		rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DETECTION_FILTER_MASK_TICKNESS* height, rune_filter_mask, false);
+		rune_part.generate_image(0.5 * width, 0.5 * height, cv::Size2i(width, height), RUNE_SEGMENT_DETECTION_DETECTION_MASK_TICKNESS * height, rune_detection_mask, false);
 
-		cv::Mat filtered_result;
-		cv::bitwise_and(rune_image_with_borders, rune_image_with_borders, filtered_result, rune_filter_mask);
+		cv::Mat filtered_result, detection_result;
+		cv::bitwise_and(rune_image_with_borders, rune_filter_mask, filtered_result, rune_filter_mask);
+		cv::bitwise_and(filtered_result, rune_detection_mask, detection_result, rune_detection_mask);
 
-		int rune_filter_mask_white_pixel_count_non_zero = cv::countNonZero(rune_filter_mask);
-		int match_mask_white_pixel_count_non_zero = cv::countNonZero(filtered_result);
-		double match = static_cast<double>(match_mask_white_pixel_count_non_zero) / static_cast<double>(rune_filter_mask_white_pixel_count_non_zero);
+		//int rune_filter_mask_white_pixel_count = cv::countNonZero(rune_filter_mask);
+		int detection_mask_white_pixel_count = cv::countNonZero(rune_detection_mask);
+		int match_white_pixel_count = cv::countNonZero(detection_result);
+		double match = static_cast<double>(match_white_pixel_count) / static_cast<double>(detection_mask_white_pixel_count);
 
 		if (match >= RUNE_SEGMENT_DETECTION_THRESHOLD) {
 			std::cout << "Pattern detected!" << std::endl;
 			m_rune |= rune_bit; // Set the corresponding bit in m_rune
 		}
 
-
-		cv::imshow("rune_filter_mask", rune_filter_mask);
-		cv::imshow("rune_detection_mask", rune_detection_mask);
-		cv::imshow("rune_image", rune_image);
-		cv::imshow("rune_image_with_borders", rune_image_with_borders);
-		cv::imshow("rune_filter_mask", rune_filter_mask);
-		cv::imshow("rune_detection_mask", rune_detection_mask);
-
-		cv::imshow("filtered_result", filtered_result);
+		//cv::imshow("rune_image", rune_image);
+		cv::imshow("1-rune_image_with_borders", rune_image_with_borders);
+		cv::imshow("2-rune_filter_mask", rune_filter_mask);
+		cv::imshow("3-rune_detection_mask", rune_detection_mask);
+		cv::imshow("4-filtered_result", filtered_result);
+		cv::imshow("5-detection_result", detection_result);
 
 		cv::waitKey(300); // Wait for a key press to close the window
 		cv::destroyAllWindows();
 	}
-
+	 
 	return (m_rune != 0);
 }

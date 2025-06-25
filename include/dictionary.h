@@ -21,9 +21,10 @@ public:
     Dictionary(const fs::path& filePath);
     bool load(const fs::path& filePath);
     bool save(const fs::path& filePath);
+	bool has_hash(const std::string& hash) const;
 	bool add_word(const std::string& word, const std::string& translation);
 	bool get_hash_list(std::vector<std::string>& hash_list) const;
-    bool get_word_list(std::vector<std::string>& hash_list) const;
+    bool get_word_list(std::vector<std::string>& word_list) const;
 	bool get_translation(const std::string& word, std::string& translation) const;
     std::string translate(const std::string& str);
     std::string translate(const std::vector<Note>& notes);
@@ -31,6 +32,9 @@ public:
     std::string translate(const Word& word);
     std::string translate(const std::vector<Word>& words);
     bool generate_images(const fs::path& image_dir, std::string extension = ".png") const;
+    std::string & operator[](std::string key) {
+        return m_hashtable[key];
+    }
 private:
     bool m_learning = false;
     std::map<std::string, std::string> m_hashtable;

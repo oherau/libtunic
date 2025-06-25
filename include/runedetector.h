@@ -40,7 +40,8 @@ public:
     bool generate_scale_factors(const cv::Mat& image, const cv::Mat& pattern, std::vector<double>& scale_factors);
     cv::Mat get_image_lines(const cv::Mat& src);
     bool decode_word_image(const fs::path& word_image, Word& word);
-    cv::Mat cropBlackBorders(const cv::Mat& image);
+    cv::Mat crop_black_borders(const cv::Mat& image);
+	bool dictionarize(const fs::path& image_path, bool debug_mode = false);
 private:
     Dictionary* m_dictionary = nullptr;
     std::unordered_map<std::string, cv::Mat> m_rune_images; // Map to store rune images

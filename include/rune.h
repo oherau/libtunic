@@ -105,11 +105,13 @@ const auto RUNE_SEGMENT_14 = { RUNE_POINT_H, RUNE_POINT_J };
 const auto RUNE_RADIUS_16 = { RUNE_POINT_M, RUNE_POINT_J };
 
 // in percent relative to height of the rune image (ex: height=130px  tickness=130*factor=6px)
-const auto RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS = 0.06;
-const auto RUNE_SEGMENT_DETECTION_DEFAULT_TICKNESS = 0.04;
+const auto RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS = 0.05;
+const auto RUNE_SEGMENT_DETECTION_FILTER_MASK_TICKNESS = 0.10; // 0.04;
+const auto RUNE_SEGMENT_DETECTION_DETECTION_MASK_TICKNESS = 0.04; // 0.04;
 
 //const auto RUNE_DEFAULT_SIZE = cv::Size2i(50, 100); // Default size of the rune image
-const auto RUNE_DEFAULT_SIZE = cv::Size2i(70, 130); // Default size of the rune image
+//const auto RUNE_DEFAULT_SIZE = cv::Size2i(70, 130); // Default size of the rune image
+const auto RUNE_DEFAULT_SIZE = cv::Size2d(23.75f, 51.00f); // Default size of the rune image
 
 
 // MASKS

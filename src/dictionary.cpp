@@ -125,6 +125,11 @@ bool Dictionary::save(const fs::path& filePath) {
     return true;
 }
 
+bool Dictionary::has_hash(const std::string& hash) const
+{
+	return m_hashtable.find(hash) != m_hashtable.end();
+}
+
 bool Dictionary::add_word(const std::string& word, const std::string& translation)
 {
     if(word.empty() || translation.empty()) {

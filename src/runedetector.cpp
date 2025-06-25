@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <word.h>
+#include <toolbox.h>
 
 
 RuneDetector::RuneDetector(Dictionary* dictionary) : m_dictionary(dictionary)
@@ -85,7 +86,40 @@ bool RuneDetector::decode_word_image(const fs::path& file_path, Word& word)
 		return false;
 	}
 
-	bool result = word.decode_image(word_image);
+	//cv::imshow("word_image before", word_image);
+
+
+	make_white_rune_black_background(word_image);
+	//cv::imshow("word_image after", word_image);
+	//cv::waitKey(0);
+	//cv::destroyAllWindows();
+
+
+	int line_center_y = 0;
+	int tickness = 0;
+	if (!find_horizontal_separator(word_image, line_center_y, tickness)) {
+		std::cerr << "No horizontal separator found in the rune image." << std::endl;
+		return false; // No separator line found
+	}
+
+	int line_center_x_min = 0;
+	int line_center_x_max = word_image.cols;
+	if (!find_horizontal_separator_bounds(word_image, line_center_y, line_center_x_min, line_center_x_max)) {
+		std::cerr << "Error when trying to find word width" << std::endl;
+		return false;
+	}
+
+	// crop size - we only crop the left size of the word image
+	int height = word_image.rows;
+	int width = word_image.cols - line_center_x_min; 
+	cv::Rect roi(line_center_x_min, 0, width, height);
+	cv::Mat cropped_image = word_image(roi);
+
+	bool word_decoding_result = word.decode_image(cropped_image);
+
+	// last step: an image of the decoded word is generated and a detection is done on original image
+	// TODO: launch a detection on originial image to confirm crrectness of the decoding
+	bool result = word_decoding_result;
 
 	return result;
 }
@@ -148,7 +182,7 @@ cv::Mat RuneDetector::get_image_lines(const cv::Mat& src) {
 	return cv::Mat(cdstP);
 }
 
-cv::Mat RuneDetector::cropBlackBorders(const cv::Mat& image) {
+cv::Mat RuneDetector::crop_black_borders(const cv::Mat& image) {
 	if (image.empty()) {
 		std::cerr << "Input image is empty. Cannot crop." << std::endl;
 		return cv::Mat(); // Return empty Mat
@@ -218,6 +252,43 @@ cv::Mat RuneDetector::cropBlackBorders(const cv::Mat& image) {
 	cv::Mat croppedImage = image(boundingBox);
 
 	return croppedImage;
+}
+
+// Take an image, partition it into potential rune words zones, try to parse and store them in the dictionary if not already present
+bool RuneDetector::dictionarize(const fs::path& image_path, bool debug_mode)
+{
+	// Load the image
+	auto original_img = cv::imread(image_path.string(), cv::IMREAD_COLOR_BGR);
+
+	// prepare the image
+	make_white_rune_black_background(original_img);
+
+	std::vector<cv::Mat> partition;
+	if (!partition_image(original_img, partition)) {
+		std::cerr << "Error: Could not partition the image into potential rune words zones." << std::endl;
+		return false;
+	}
+
+	for(const auto& potential_word_image : partition) {
+
+		// Decode the word image
+		Word word;
+		if (!word.decode_image(potential_word_image)) {
+			std::cerr << "Error: Could not decode word image." << std::endl;
+			continue; // Skip to the next image if decoding fails
+		}
+		// Check if the word is already in the dictionary
+		std::string translation;
+		if (m_dictionary->has_hash(word.get_hash())) {
+			std::cout << "Word '" << word.get_hash() << "' already exists in the dictionary with translation: " << translation << std::endl;
+			continue; // Skip if the word is already in the dictionary
+		}
+		// Add the new word to the dictionary
+		m_dictionary->add_word(word.get_hash(), word.to_pseudophonetic());
+		std::cout << "Added new word '" << word.get_hash() << "' to the dictionary." << std::endl;
+	}
+
+	return false;
 }
 
 bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& detected_words, bool debug_mode)

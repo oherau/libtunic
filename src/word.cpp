@@ -1,6 +1,7 @@
 #include "word.h"
 #include "dictionary.h"
 #include <opencv2/opencv.hpp>
+#include <toolbox.h>
 
 Word::Word(const std::string& str)
 {
@@ -90,29 +91,64 @@ bool Word::decode_image(const cv::Mat& word_image)
 	bool result = true;
 	auto height = word_image.rows;
 	auto width = word_image.cols;
-	int rune_width = height * 0.5f; // Assuming rune width is 60% of the height (to be verivied)
+	int rune_width = std::round(height * RUNE_DEFAULT_SIZE.aspectRatio());
+
+	// resize image so the width is a perfect multiple of rune_width
+	int nb_runes = std::round(double(width) / double(rune_width));
+
+
+	cv::Rect roi_word(0, 0, std::min(nb_runes*rune_width, width), height);
+	//cv::Mat resized_image(height, nb_runes*rune_width, CV_8UC1, cv::Scalar(0));
+	cv::Mat region_to_copy = word_image(roi_word);
+	region_to_copy = word_image(roi_word);
+
+	cv::Mat resized_image;
+	if(width < nb_runes * rune_width) {
+		int dx = nb_runes * rune_width - width; // Calculate the right border width
+		// If the image is smaller than the expected width, resize it
+		cv::copyMakeBorder(word_image,
+			resized_image,      // Output image
+			0,                   // top border
+			0,                   // bottom border
+			0,                   // left border
+			dx,  // right border
+			cv::BORDER_CONSTANT, // Border type
+			cv::Scalar(0));       // Border value
+	} else {
+		// If the image is larger or equal, just copy the region
+		resized_image = word_image(roi_word).clone();
+	}
+
+	// Dilation
+	int current_kernel_size = 5;
+	int current_iterations = 1;
+	cv::Mat processed_result = applyClosing(resized_image, current_kernel_size, current_iterations);
+	cv::imshow("Cloased Image (dil the erosion) (Kernel: " + std::to_string(current_kernel_size) + ", Iterations: " + std::to_string(current_iterations) + ")", processed_result);
+
+
 
 	m_runes.clear(); // Clear previous runes
 
-	for (int x = 0; x <= (width-rune_width); x += rune_width) {
+	for (int i = 0; i < nb_runes; i++) {
+		int x = i * rune_width;
 		// Extract the rune image
-		cv::Rect roi(x, 0, rune_width, height);
-		cv::Mat rune_image = word_image(roi);
-		// Convert to grayscale and threshold
-		cv::Mat gray_rune;
-		cv::cvtColor(rune_image, gray_rune, cv::COLOR_BGR2GRAY);
-		cv::threshold(gray_rune, gray_rune, 128, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+		cv::Rect roi_rune(x, 0, rune_width, height);
+		cv::Mat rune_image = processed_result(roi_rune);
 
 		// Decode the rune from the image
 		Rune rune;
-		bool rune_detected = rune.decode_image(gray_rune);
+		bool rune_detected = rune.decode_image(rune_image);
+
+		// push back rune even if not decoded (will be display as ???)
+		m_runes.push_back(rune);
 		if(rune_detected) {
-			m_runes.push_back(rune);
+			//m_runes.push_back(rune);
 		} else {
 			std::cerr << "Failed to decode rune from image at position: " << x << std::endl;
 			result = false; // If any rune fails to decode, set result to false
 		}
 	}
 
-	return result;
+	return true;
+	//return result;
 }

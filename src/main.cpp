@@ -4,17 +4,18 @@
 #include <vector>
 #include <queue>
 #include <filesystem>
+#include <string>
 #include "dictionary.h"
 #include "notedetector.h"
 #include "rune.h"
-#include <runedetector.h>
-#include <word.h>
+#include "runedetector.h"
+#include "word.h"
 //#include "libtuneic.h"
 namespace fs = std::filesystem;
 
-#include <iostream>
-#include <string>
-#include <filesystem> // C++17 and later
+// catch2 mocking
+#define CHECK( x ) { if(!(x)) { printf("[ KO ] %s\n", #x);}  }
+
 
 // Platform-specific headers
 #ifdef _WIN32
@@ -26,6 +27,7 @@ namespace fs = std::filesystem;
 #include <mach-o/dyld.h> // For _NSGetExecutablePath
 #include <limits.h>  // For PATH_MAX
 #endif
+#include <toolbox.h>
 
 namespace fs = std::filesystem;
 
@@ -69,7 +71,8 @@ fs::path getExecutablePath() {
 const auto RUNES_FOLDER = fs::path("data/runes");
 const auto DICTIONARY_EN = fs::path("lang/dictionary.txt");
 
-// prototypes
+// prototypes ///////////////////////////
+
 int test();
 int test_audio();
 int test_image();
@@ -78,6 +81,10 @@ int test_word();
 int test_rune_image_generation();
 int test_dictionary_image_gen();
 int test_decode_word_image();
+int test_dictionary_load_save();
+int test_dictionarize();
+
+/////////////////////////////////////////
 
 int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length);
 int image_detection(const fs::path& dictionary_file, const fs::path& image_file);
@@ -192,7 +199,10 @@ int test() {
     //result += test_dictionary_image_gen();
     //result += test_image();
     //result += test_rune_image_generation();
+    //result += test_dictionary_load_save();
     result += test_decode_word_image();
+	//result += test_dictionarize();
+
 
 
     if (result == 0) {
@@ -413,6 +423,7 @@ int test_decode_word_image() {
 			continue; // Skip to the next file if decoding fails
         }
 
+
         cv::Mat detected_word_img;
         cv::Size rune_size = RUNE_DEFAULT_SIZE;
         int tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image
@@ -422,13 +433,27 @@ int test_decode_word_image() {
             auto decoded_word_str = decoded_word.to_pseudophonetic();
             auto decoded_word_hash = decoded_word.get_hash();
 
+			auto filename = entry.path().stem().string();
+			auto expected_word_hash = filename.substr(0, filename.find_first_of('_'));
+			auto expected_word_str = Word(expected_word_hash).to_pseudophonetic();
+
 			std::string original_path = entry.path().string();
             auto original_img = cv::imread(original_path.c_str(), cv::IMREAD_COLOR_BGR);
-            cv::imshow("Original: ", original_img);
-            cv::imshow("Decoded: " + decoded_word_hash + " " + decoded_word_str, detected_word_img);
 
-            cv::waitKey(0); // Wait for a key press to close the window
-            cv::destroyAllWindows();
+            CHECK(decoded_word_hash == expected_word_hash);
+            CHECK(decoded_word_str == expected_word_str);
+
+            if( decoded_word_hash != expected_word_hash || decoded_word_str != expected_word_str) {
+                std::cerr << "Decoded word does not match expected: " << decoded_word_hash << " != " << expected_word_hash << std::endl
+                    << " or " << std::endl
+                    << decoded_word_str << " != " << expected_word_str << std::endl;
+            
+                cv::imshow("Original: ", original_img);
+                cv::imshow("Decoded: " + decoded_word_hash + " " + decoded_word_str, detected_word_img);
+
+                cv::waitKey(0); // Wait for a key press to close the window
+                cv::destroyAllWindows();
+			}
         }
         else {
             std::cerr << "Error: Could not decode word image: " << entry.path() << std::endl;
@@ -437,4 +462,71 @@ int test_decode_word_image() {
     }
 
     return 0;
+}
+
+
+int test_dictionary_load_save() {
+
+
+    std::cout << std::endl << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << "==========   DICT LOAD SAVE    - TEST MODE   ===========" << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << std::endl;
+
+	fs::path temp_file = "test_dictionary.txt";
+
+    Dictionary dictionary(DICTIONARY_EN);
+	dictionary.save(temp_file);
+
+    auto original_dictionary_lines = loadLinesFromFile(DICTIONARY_EN);
+    auto saved_dictionary_lines = loadLinesFromFile(temp_file);
+
+	int nb_fails = 0;
+
+    for(const auto& o_line : original_dictionary_lines) {
+        if(o_line.starts_with("#") || o_line.empty()) {
+            continue; // Skip comments and empty lines
+		}
+        if(std::find(saved_dictionary_lines.begin(), saved_dictionary_lines.end(), o_line) == saved_dictionary_lines.end()) {
+            std::cerr << "Line not found in saved dictionary: " << o_line << std::endl;
+            nb_fails++;
+        }
+	}
+	CHECK(nb_fails == 0);
+    return nb_fails;
+}
+
+int test_dictionarize() {
+
+
+    std::cout << std::endl << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << "==========   DICTIONARIZE - TEST MODE   ===========" << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << std::endl;
+
+	int nb_fails = 0;
+    fs::path temp_file = "test_dictionarize.txt";
+
+    Dictionary dictionary;
+	RuneDetector rune_detector(&dictionary);
+
+	rune_detector.dictionarize(fs::path("data/screenshots/manual_page_10.jpg"), true);
+    
+
+    std::cout << "Detected words in the image:" << std::endl;
+    std::vector<std::string> word_list;
+    dictionary.get_word_list(word_list);
+    for (const auto& key : word_list) {
+		std::string translation;
+        dictionary.get_translation(key, translation);
+        std::cout << "Word: " << key << " - Translation: " << translation << std::endl;
+
+    }
+
+    dictionary.save(temp_file);
+
+    CHECK(nb_fails == 0);
+    return nb_fails;
 }
