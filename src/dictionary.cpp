@@ -1,5 +1,5 @@
 #include "dictionary.h"
-#include "notedetector.h"
+#include "arpeggiodetector.h"
 #include "word.h"
 #include <fstream>
 #include <string>
@@ -113,7 +113,10 @@ bool Dictionary::save(const fs::path& filePath) {
 
             if (firstChar != currentHeaderChar) {
                 // New group, print header
-				file << "###### " << firstChar << " ######" << std::endl;
+
+                file << "###############################" << std::endl
+                    << "######         " << firstChar << "         ######" << std::endl
+                    << "###############################" << std::endl;
                 currentHeaderChar = firstChar;
             }
         }

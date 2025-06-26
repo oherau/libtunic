@@ -144,7 +144,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClCompile Include="src\arpeggio.cpp" />
     <ClCompile Include="src\dictionary.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\notedetector.cpp" />
+    <ClCompile Include="src\arpeggiodetector.cpp" />
     <ClCompile Include="src\rune.cpp" />
     <ClCompile Include="src\runedetector.cpp" />
     <ClCompile Include="src\toolbox.cpp" />
@@ -154,7 +154,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClInclude Include="include\arpeggio.h" />
     <ClInclude Include="include\dictionary.h" />
     <ClInclude Include="include\note.h" />
-    <ClInclude Include="include\notedetector.h" />
+    <ClInclude Include="include\arpeggiodetector.h" />
     <ClInclude Include="include\rune.h" />
     <ClInclude Include="include\runedetector.h" />
     <ClInclude Include="include\toolbox.h" />

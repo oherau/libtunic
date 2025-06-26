@@ -15,6 +15,7 @@ public:
 	bool decode_image(const cv::Mat& word_image);
 	size_t size() const { return m_runes.size(); }
 	bool generate_image(cv::Size2i rune_size, int tickness, cv::Mat& output_image) const;
+	std::vector<Rune> get_runes() const { return m_runes; }
 private:
 	std::vector<Rune> m_runes;
 };

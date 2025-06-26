@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <string>
 #include "dictionary.h"
-#include "notedetector.h"
+#include "arpeggiodetector.h"
 #include "rune.h"
 #include "runedetector.h"
 #include "word.h"
@@ -75,7 +75,7 @@ const auto DICTIONARY_EN = fs::path("lang/dictionary.txt");
 
 int test();
 int test_audio();
-int test_image();
+int test_image_detect_words();
 int test_rune();
 int test_word();
 int test_rune_image_generation();
@@ -83,6 +83,7 @@ int test_dictionary_image_gen();
 int test_decode_word_image();
 int test_dictionary_load_save();
 int test_dictionarize();
+int test_arpeggio_sequence();
 
 /////////////////////////////////////////
 
@@ -155,7 +156,7 @@ int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file,
 
     std::vector<float> audioData;
 
-    NoteDetector noteDetector;
+    ArpeggioDetector noteDetector;
     std::vector<Note> detected_sequence;
     noteDetector.processFile(audio_file, detected_sequence, note_length);
 
@@ -193,15 +194,16 @@ int test_check(const T& expected, const T& result) {
 
 int test() {
     int result = 0;
- //   result += test_rune();
- //   result += test_word();
-	//result += test_audio();
-    //result += test_dictionary_image_gen();
-    //result += test_image();
-    //result += test_rune_image_generation();
     //result += test_dictionary_load_save();
-    result += test_decode_word_image();
+    //result += test_rune();
+    //result += test_word();
+	//result += test_audio();
+    result += test_dictionary_image_gen();
+    result += test_image_detect_words();
+    //result += test_rune_image_generation();
+    //result += test_decode_word_image();
 	//result += test_dictionarize();
+	//result += test_arpeggio_sequence();
 
 
 
@@ -315,7 +317,7 @@ int test_audio() {
     return nb_fails;
 }
 
-int test_image() {
+int test_image_detect_words() {
     std::cout << std::endl << std::endl;
     std::cout << "===============================================" << std::endl;
     std::cout << "==========     IMAGE - TEST MODE    ===========" << std::endl;
@@ -327,8 +329,9 @@ int test_image() {
 	rune_detector.load_rune_folder(RUNES_FOLDER);
 
     const std::vector< std::pair<std::string, std::string> > test_set_001 = {
-        { "data/screenshots/found_an_item.jpg" , "found an item"},
-        { "data/screenshots/found_bracelet.png" , "found an item"},
+        //{ "data/screenshots/found_an_item.jpg" , "found an item"},
+        //{ "data/screenshots/found_bracelet.png" , "found an item"},
+        { "data/screenshots/manual_page_10.jpg" , "lots of runes !!!"},
     };
 
     int nb_fails = 0;
@@ -389,6 +392,7 @@ int test_dictionary_image_gen() {
     std::cout << "========================================================" << std::endl;
     std::cout << std::endl;
     Dictionary dictionary(DICTIONARY_EN);
+    dictionary.save(DICTIONARY_EN);
 
 	fs::path current_path = getExecutablePath().parent_path().parent_path().parent_path() / fs::path("data") / fs::path("runes");
     dictionary.generate_images(current_path, ".png");
@@ -514,7 +518,6 @@ int test_dictionarize() {
 
 	rune_detector.dictionarize(fs::path("data/screenshots/manual_page_10.jpg"), true);
     
-
     std::cout << "Detected words in the image:" << std::endl;
     std::vector<std::string> word_list;
     dictionary.get_word_list(word_list);
@@ -522,10 +525,47 @@ int test_dictionarize() {
 		std::string translation;
         dictionary.get_translation(key, translation);
         std::cout << "Word: " << key << " - Translation: " << translation << std::endl;
-
     }
 
     dictionary.save(temp_file);
+
+    CHECK(nb_fails == 0);
+    return nb_fails;
+}
+
+int test_arpeggio_sequence() {
+
+
+    std::cout << std::endl << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << "==========   ARPEGGIO SEQUENCE - TEST MODE   ===========" << std::endl;
+    std::cout << "========================================================" << std::endl;
+    std::cout << std::endl;
+
+    Dictionary dictionary(DICTIONARY_EN);
+
+    const std::vector< std::pair<std::vector<int>, std::string> > test_set_001 = {
+        { {13, 12, 9, 6, 2, 1} , "own"},
+        { {13, 12, 6, 2, 1, 3, 6, 10, 12, 13} , "enter"},
+    };
+
+    int nb_fails = 0;
+
+    RuneDetector rune_detector(&dictionary);
+	ArpeggioDetector arpeggio_detector;
+	arpeggio_detector.load_dictionary(dictionary);
+
+    for(const auto& test : test_set_001) {
+        auto arpeggio_sequence = test.first;
+        auto expected = test.second;
+
+		std::vector<Rune> detected_runes;
+        bool result = arpeggio_detector.detect_runes(arpeggio_sequence, detected_runes);
+		std::string translation = dictionary.translate(detected_runes);
+
+		CHECK(translation == expected);
+        nb_fails += (translation == expected ? 0 : 1);
+	}
 
     CHECK(nb_fails == 0);
     return nb_fails;

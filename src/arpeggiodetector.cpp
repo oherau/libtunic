@@ -1,4 +1,7 @@
-#include "notedetector.h"
+#include "arpeggiodetector.h"
+#include <arpeggio.h>
+#include <queue>
+#include <cmath>
 using Complex = std::complex<double>;
 
 void FFT::fft(std::vector<Complex>& a) {
@@ -114,4 +117,183 @@ std::string remove_octave(const std::string& str) {
     }
 
     return std::string(ss.str());
+}
+
+bool ArpeggioDetector::load_dictionary(const Dictionary& dictionary)
+{
+    std::vector<std::string> hash_list;
+    dictionary.get_hash_list(hash_list);
+    for(const auto& hash : hash_list) {
+		Word word(hash);
+        auto arpeggio = Arpeggio(word);
+
+		m_arpeggio_dictionary[hash] = arpeggio;
+
+		m_arpeggio_min_length = std::min(m_arpeggio_min_length, arpeggio.get_length());
+		m_arpeggio_max_length = std::max(m_arpeggio_max_length, arpeggio.get_length());
+	}
+
+    return true;
+}
+
+std::vector<Note> ArpeggioDetector::get_clean_sequence(const std::vector<Note>& sequence) {
+    std::vector<Note> cleanSeq;
+    Note lastNote = Note::SILENCE;
+
+    for (const auto& note : sequence) {
+        if (note != lastNote) {
+            cleanSeq.push_back(note);
+            lastNote = note;
+        }
+    }
+
+    return std::vector<Note>(cleanSeq);
+}
+
+Note ArpeggioDetector::findClosestNote(double frequency) {
+    if (frequency < SILENCE_TONE_THRESHOLD) return Note::SILENCE;
+
+    double min_dist = std::numeric_limits<double>::max();
+    Note best_match = Note::UNKNOWN;
+
+    for (const auto& note : target_notes) {
+        double dist = std::abs(note.second - frequency);
+        if (dist < min_dist) {
+            min_dist = dist;
+            best_match = note.first;
+        }
+    }
+
+    // Tolerance: frequency must be closer than ~3% of the target
+    // Semi-tone is around 5.9%, so 3% is a good margin.
+    if (min_dist / frequency < 0.03) {
+        return best_match;
+    }
+
+    return Note::UNKNOWN;
+}
+
+void ArpeggioDetector::detectNoteSequence(const std::vector<float>& samples, uint32_t sampleRate, std::vector<Note>& detected_sequence, double note_length) {
+    const double chunk_duration_s = note_length / 1000.0; // 100 ms
+    const size_t samples_per_chunk = static_cast<size_t>(sampleRate * chunk_duration_s);
+    // Determine FFT size (next power of 2 for best efficiency)
+    size_t fft_size = 1;
+    while (fft_size < samples_per_chunk) {
+        fft_size *= 2;
+    }
+
+    std::cout << "\nDetecting note sequence (range : " << (int)note_length << "ms)\n";
+
+    for (size_t i = 0; i + samples_per_chunk <= samples.size(); i += samples_per_chunk) {
+
+        std::vector<FFT::Complex> chunk(fft_size, 0.0);
+
+        // Apply Hann window to reduce spectrall losses
+        for (size_t j = 0; j < samples_per_chunk; ++j) {
+            double hann_multiplier = 0.5 * (1 - cos(2 * std::numbers::pi * j / (samples_per_chunk - 1)));
+            chunk[j] = samples[i + j] * hann_multiplier;
+        }
+
+        // Compute FFT
+        FFT::fft(chunk);
+
+        // Find peak frequency
+        double max_magnitude = 0.0;
+        size_t peak_index = 0;
+
+        // Analyze only the first half of FFT result (symetrical)
+        for (size_t j = 1; j < fft_size / 2; ++j) {
+            double mag = std::abs(chunk[j]);
+            if (mag > max_magnitude) {
+                max_magnitude = mag;
+                peak_index = j;
+            }
+        }
+
+        double peak_frequency = static_cast<double>(peak_index) * sampleRate / fft_size;
+
+        auto note = findClosestNote(peak_frequency);
+
+        // to avoid infinite repetitions of "SILENCE" or "UNKNOWN"
+        if (detected_sequence.empty() || detected_sequence.back() != note || (note != Note::SILENCE && note != Note::UNKNOWN)) {
+            detected_sequence.push_back(note);
+        }
+    }
+}
+
+void ArpeggioDetector::processFile(const std::filesystem::path& filePath, std::vector<Note>& detected_sequence, double note_length) {
+    if (!std::filesystem::exists(filePath)) {
+        std::cerr << "Erreur : Le fichier '" << filePath << "' n'existe pas." << std::endl;
+        return;
+    }
+
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Error : Impossible to open file." << std::endl;
+        return;
+    }
+
+    WavHeader header;
+    file.read(reinterpret_cast<char*>(&header), sizeof(WavHeader));
+
+    // Validation simple
+    if (std::string(header.riff, 4) != "RIFF" || std::string(header.wave, 4) != "WAVE") {
+        std::cerr << "Error: Invalid or unsupported file (RIFF/WAVE header is missing)." << std::endl;
+        return;
+    }
+    if (header.format_type != 1) { // 1 = PCM
+        std::cerr << "Error: Only unco;pressed WAV PCM  are supported." << std::endl;
+        return;
+    }
+
+    std::cout << "File opened : " << filePath << "\n"
+        << "Sample rate: " << header.sample_rate << " Hz\n"
+        << "Channels: " << header.channels << "\n"
+        << "Bits per sample: " << header.bits_per_sample << std::endl;
+
+    // Reading audio data
+    std::vector<float> audio_samples;
+    int16_t sample16;
+    while (file.read(reinterpret_cast<char*>(&sample16), sizeof(int16_t))) {
+        // Conversion in nor;alized float [-1.0, 1.0]
+        audio_samples.push_back(static_cast<float>(sample16) / 32768.0f);
+        // If stereo, the second channel is ignored
+        if (header.channels == 2) {
+            file.seekg(sizeof(int16_t), std::ios_base::cur);
+        }
+    }
+
+    detectNoteSequence(audio_samples, header.sample_rate, detected_sequence, note_length);
+}
+
+bool ArpeggioDetector::detect_runes(std::vector<int>& arpeggio_sequence, std::vector<Rune>& detected_sequence)
+{
+	// TODO: Implement the actual detection logic
+	return false; // Placeholder for the actual implementation
+
+
+  //  std::vector<int> arpeggio_seq(arpeggio_sequence);
+  //  std::queue<int> buffer;
+
+  //  while (true) {
+  //      if(buffer.size() < m_arpeggio_min_length) {
+  //          if(arpeggio_sequence.empty()) {
+  //              buffer.push(arpeggio_sequence.front());
+		//		arpeggio_sequence.erase(arpeggio_sequence.begin());
+  //              break;
+  //          }
+		//}
+
+  //      if(buffer.size() > m_arpeggio_max_length) {
+  //          buffer.pop();
+		//}
+
+  //      if (find_arpeggio(buffer, arpeggio)) {
+
+  //      }
+  //      
+
+  //  }
+
+  //  return false;
 }

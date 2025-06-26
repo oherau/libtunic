@@ -291,6 +291,238 @@ bool RuneDetector::dictionarize(const fs::path& image_path, bool debug_mode)
 	return false;
 }
 
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <algorithm> // For std::max
+#include <optional>  // Required for std::optional
+
+// --- Helper Definitions (from previous explanations) ---
+
+// Define an enum for text alignment within a rectangle
+enum class TextAlignment {
+	LEFT_TOP,
+	LEFT_CENTER,
+	LEFT_BOTTOM,
+	CENTER_TOP,
+	CENTER_CENTER,
+	CENTER_BOTTOM,
+	RIGHT_TOP,
+	RIGHT_CENTER,
+	RIGHT_BOTTOM
+};
+
+// Helper to split a string by delimiter (used for word wrapping)
+std::vector<std::string> splitString(const std::string& str, char delimiter) {
+	std::vector<std::string> tokens;
+	std::string token;
+	std::istringstream tokenStream(str);
+	while (std::getline(tokenStream, token, delimiter)) {
+		tokens.push_back(token);
+	}
+	return tokens;
+}
+
+/**
+ * @brief Draws text within a specified rectangle on an image, handling word wrapping and font scaling.
+ * This is a complex helper function called by addTextToImage when a rect is provided.
+ *
+ * @param img The cv::Mat image to draw text on (modified in-place).
+ * @param text The string of text to be drawn.
+ * @param rect The cv::Rect bounding box for the text.
+ * @param fontFace The font type (e.g., cv::FONT_HERSHEY_SIMPLEX).
+ * @param initialFontScale The starting font scale to try.
+ * @param color The color of the text.
+ * @param thickness The thickness of the lines forming the text.
+ * @param lineType The line type (e.g., cv::LINE_AA).
+ * @param alignment The TextAlignment enum value for horizontal and vertical alignment.
+ * @param lineSpacingFactor Factor to multiply line height for spacing (e.g., 1.2 for 20% extra space).
+ * @param minFontScale Minimum font scale to try before giving up on fitting.
+ */
+void drawTextInRect(
+	cv::Mat& img,
+	const std::string& text,
+	const cv::Rect& rect,
+	int fontFace,
+	double initialFontScale,
+	cv::Scalar color,
+	int thickness,
+	int lineType,
+	TextAlignment alignment,
+	double lineSpacingFactor,
+	double minFontScale
+) {
+	if (img.empty() || text.empty() || rect.empty()) {
+		return;
+	}
+
+	double currentFontScale = initialFontScale;
+	std::vector<std::string> wrappedLines;
+	int totalTextHeight = 0;
+
+	bool foundFit = false;
+	while (currentFontScale >= minFontScale) {
+		wrappedLines.clear();
+		totalTextHeight = 0;
+
+		std::vector<std::string> words = splitString(text, ' ');
+		std::string currentLine;
+		int currentLineHeight = 0;
+
+		for (const std::string& word : words) {
+			std::string testLine = currentLine.empty() ? word : currentLine + " " + word;
+			int baseline = 0;
+			cv::Size testSize = cv::getTextSize(testLine, fontFace, currentFontScale, thickness, &baseline);
+
+			if (testSize.width > rect.width && !currentLine.empty()) {
+				wrappedLines.push_back(currentLine);
+				totalTextHeight += currentLineHeight;
+				if (!wrappedLines.empty()) {
+					totalTextHeight += static_cast<int>(currentLineHeight * (lineSpacingFactor - 1));
+				}
+				currentLine = word;
+				currentLineHeight = cv::getTextSize(currentLine, fontFace, currentFontScale, thickness, 0).height;
+
+				if (cv::getTextSize(word, fontFace, currentFontScale, thickness, 0).width > rect.width) {
+					goto reduce_font_scale;
+				}
+			}
+			else {
+				currentLine = testLine;
+				currentLineHeight = std::max(currentLineHeight, testSize.height);
+			}
+		}
+		if (!currentLine.empty()) {
+			wrappedLines.push_back(currentLine);
+			totalTextHeight += currentLineHeight;
+			if (wrappedLines.size() > 1) {
+				totalTextHeight += static_cast<int>(currentLineHeight * (lineSpacingFactor - 1));
+			}
+		}
+
+		if (totalTextHeight <= rect.height) {
+			foundFit = true;
+			break;
+		}
+
+	reduce_font_scale:
+		currentFontScale -= 0.05; // Slightly finer grain reduction
+	}
+
+	if (!foundFit && currentFontScale < minFontScale) {
+		std::cerr << "Warning: Could not fit text into rectangle at minimum font scale. Text might be truncated or too small." << std::endl;
+		if (wrappedLines.empty() && !text.empty()) {
+			wrappedLines.push_back(text.substr(0, std::min((size_t)text.length(), (size_t)10)) + "..."); // Fallback to truncated text
+		}
+		if (wrappedLines.empty()) return;
+	}
+
+	int currentY = rect.y;
+	if (alignment == TextAlignment::CENTER_CENTER || alignment == TextAlignment::LEFT_CENTER || alignment == TextAlignment::RIGHT_CENTER) {
+		currentY = rect.y + (rect.height - totalTextHeight) / 2;
+	}
+	else if (alignment == TextAlignment::CENTER_BOTTOM || alignment == TextAlignment::LEFT_BOTTOM || alignment == TextAlignment::RIGHT_BOTTOM) {
+		currentY = rect.y + rect.height - totalTextHeight;
+	}
+
+	int padding_x = thickness * 2;
+
+	for (const std::string& line : wrappedLines) {
+		int baseline = 0;
+		cv::Size lineSize = cv::getTextSize(line, fontFace, currentFontScale, thickness, &baseline);
+
+		int drawX = rect.x;
+		if (alignment == TextAlignment::CENTER_CENTER || alignment == TextAlignment::CENTER_TOP || alignment == TextAlignment::CENTER_BOTTOM) {
+			drawX = rect.x + (rect.width - lineSize.width) / 2;
+		}
+		else if (alignment == TextAlignment::RIGHT_CENTER || alignment == TextAlignment::RIGHT_TOP || alignment == TextAlignment::RIGHT_BOTTOM) {
+			drawX = rect.x + rect.width - lineSize.width - padding_x;
+		}
+		else { // Left aligned
+			drawX = rect.x + padding_x;
+		}
+
+		cv::Point org(drawX, currentY + lineSize.height);
+		cv::putText(img, line, org, fontFace, currentFontScale, color, thickness, lineType);
+
+		currentY += static_cast<int>(lineSize.height * lineSpacingFactor);
+	}
+}
+
+
+// --- Modified addTextToImage Function ---
+
+/**
+ * @brief Adds text to a cv::Mat image, either at a specified point or fitting within a rectangle.
+ *
+ * @param image The cv::Mat image to draw text on. This image will be modified in-place.
+ * @param text The string of text to be drawn.
+ * @param org Optional: The bottom-left corner of the first text line if drawing at a point.
+ * Must be provided if 'rect' is not.
+ * @param rect Optional: The cv::Rect bounding box to fit the text into.
+ * If provided, 'org' will be ignored, and text will be wrapped/scaled.
+ * @param fontFace The font type (e.g., cv::FONT_HERSHEY_SIMPLEX). Default: FONT_HERSHEY_SIMPLEX.
+ * @param fontScale The font scale factor. Default: 1.0.
+ * @param color The color of the text (e.g., cv::Scalar(255, 0, 0) for blue in BGR). Default: Black.
+ * @param thickness The thickness of the lines forming the text. Default: 1.
+ * @param lineType The line type (e.g., cv::LINE_AA for anti-aliased). Default: LINE_AA.
+ * @param bottomLeftOrigin When true, the image origin (0,0) is at the bottom-left corner. Default: false (top-left).
+ * Only relevant if 'org' is used (i.e., 'rect' is not provided).
+ * @param alignment The TextAlignment enum for horizontal/vertical alignment within 'rect'.
+ * Only relevant if 'rect' is provided. Default: LEFT_TOP.
+ * @param lineSpacingFactor Factor for line spacing when wrapping. Default: 1.2.
+ * Only relevant if 'rect' is provided.
+ * @param minFontScale Minimum font scale to try when fitting. Default: 0.3.
+ * Only relevant if 'rect' is provided.
+ * @param showImage If true, the image will be displayed in a window after drawing. Default: false.
+ * @param windowName The name of the window to display the image in, if showImage is true.
+ */
+void addTextToImage(
+	cv::Mat& image,
+	const std::string& text,
+	std::optional<cv::Point> org = std::nullopt,
+	std::optional<cv::Rect> rect = std::nullopt,
+	int fontFace = cv::FONT_HERSHEY_SIMPLEX,
+	double fontScale = 1.0,
+	cv::Scalar color = cv::Scalar(0, 0, 0),
+	int thickness = 1,
+	int lineType = cv::LINE_AA,
+	bool bottomLeftOrigin = false,
+	TextAlignment alignment = TextAlignment::LEFT_TOP,
+	double lineSpacingFactor = 1.2,
+	double minFontScale = 0.3,
+	bool showImage = false,
+	const std::string& windowName = "Image with Text"
+) {
+	if (image.empty() || text.empty()) {
+		std::cerr << "Error: Input image or text is empty. Cannot draw text." << std::endl;
+		return;
+	}
+
+	if (rect.has_value()) {
+		// If a rectangle is provided, use the complex logic to fit text within it.
+		// Parameters like bottomLeftOrigin are not directly applicable here as drawTextInRect handles its own placement.
+		drawTextInRect(image, text, rect.value(), fontFace, fontScale, color, thickness, lineType, alignment, lineSpacingFactor, minFontScale);
+	}
+	else if (org.has_value()) {
+		// If only an origin point is provided, use the simple cv::putText.
+		cv::putText(image, text, org.value(), fontFace, fontScale, color, thickness, lineType, bottomLeftOrigin);
+	}
+	else {
+		std::cerr << "Error: Neither 'org' point nor 'rect' box provided for text placement. No text drawn." << std::endl;
+		return;
+	}
+
+	// Optional: Display the image
+	if (showImage) {
+		cv::imshow(windowName, image);
+		cv::waitKey(0);
+		cv::destroyWindow(windowName);
+	}
+}
+
 bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& detected_words, bool debug_mode)
 {
 	auto original_img = cv::imread(image_path.string(), cv::IMREAD_COLOR_BGR);
@@ -327,13 +559,13 @@ bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& d
 			}
 
 
-			if (debug_mode) {
-				displayMatProperties(pattern_image, "Pattern: " + word.get_hash());
-				//displayMatProperties(image, "Image");
+			//if (debug_mode) {
+			//	displayMatProperties(pattern_image, "Pattern: " + word.get_hash());
+			//	//displayMatProperties(image, "Image");
 
-				std::cout << "Try to find word: " << word.get_hash() << std::endl;
-				cv::imshow("Try to find word : " + word.get_hash(), pattern_image);
-			}
+			//	std::cout << "Try to find word: " << word.get_hash() << std::endl;
+			//	cv::imshow("Try to find word : " + word.get_hash(), pattern_image);
+			//}
 
 			double pattern_area = pattern_image.rows * pattern_image.cols;
 
@@ -353,18 +585,42 @@ bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& d
 						if (debug_mode) {
 							//std::cout << "Match found at (" << i << ", " << j << ") with value: " 
 							//	<< result.at<float>(j, i) << std::endl;
-							cv::rectangle(original_img, bounding_box, cv::Scalar(255), 1);
+							cv::rectangle(original_img, bounding_box, cv::Scalar(255, 255, 255), -1);
+
+							cv::Rect text_zone = cv::Rect(
+								bounding_box.x + 0.05* bounding_box.width,
+								bounding_box.y + 0.05* bounding_box.height, // Position below the rune
+								bounding_box.width - 0.1 * bounding_box.width,
+								bounding_box.height - 0.1 * bounding_box.height // Fixed height for the text zone
+							);
+							std::string translation = m_dictionary->translate(word);
+							//draw_text(original_img, bounding_box, translation, cv::Scalar(255));
+							addTextToImage(
+								original_img,
+								translation,
+								std::nullopt,
+								text_zone,
+								cv::FONT_HERSHEY_SIMPLEX,
+								0.5, // Font scale
+								cv::Scalar(0, 0, 0), // White color
+								1, // Thickness
+								cv::LINE_AA, // Line type,
+								false,
+								TextAlignment::CENTER_CENTER, // Alignment
+								1.2, // Line spacing factor
+								0.1 // Minimum font scale
+							);
 						}
 					}
 				}
 				std::cout << std::endl;
 			}
-
-			if (debug_mode) {
-				cv::imshow("Detected Runes", original_img);
-				cv::waitKey(300); // Wait for a key press to close the window
-				cv::destroyAllWindows();
-			}
+		}
+		if (debug_mode) {
+			cv::imshow("Detected Runes", original_img);
+			cv::imshow("Pattern to find", pattern_image_original);
+			cv::waitKey(2000); // Wait for a key press to close the window
+			cv::destroyAllWindows();
 		}
 	}
 

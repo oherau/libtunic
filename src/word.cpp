@@ -45,7 +45,7 @@ bool Word::parse_runes(const std::string& str, std::vector<Rune>& runes)
 	std::stringstream ss;
 	auto counter = 0;
 	for (const char c : strUpper) {
-		if (c == DICT_RUNE_SEPARATOR) {
+		if (c == DICT_RUNE_SEPARATOR || c == DICT_RUNE_SEPARATOR_2) {
 			continue;
 		}
 		ss << c;

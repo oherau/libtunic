@@ -168,6 +168,7 @@ bool make_white_rune_black_background(cv::Mat& image) {
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <string> // For std::to_string
+#include <rune.h>
 
 // Function to apply Erosion
 // input_image: The source image (should be grayscale or binary for typical use)
@@ -399,8 +400,11 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 	// Create a copy of the original image to draw on
 	cv::Mat output_image = image.clone();
 
-	std::cout << "Detected Image Blocks (Rectangles):" << std::endl;
+	std::cout << "image before partition:" << std::endl;
 	int block_count = 0;
+
+	//cv::imshow("Image before applying partition", output_image);
+	//cv::waitKey(0);
 
 	// 5. Iterate through the found contours
 	for (const auto& contour : contours) {
@@ -410,7 +414,7 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 
 		// Check if the approximated polygon has 4 vertices (a rectangle) and is sufficiently large
 		// You might need to adjust the contour area threshold based on your image and expected block sizes
-		if (approx_poly.size() == 4 && cv::isContourConvex(approx_poly) && cv::contourArea(contour) > 1000) {
+		if (approx_poly.size() == 4 && cv::isContourConvex(approx_poly) && cv::contourArea(contour) > (RUNE_DEFAULT_SIZE.area()/2.0)) {
 			// Get the bounding rectangle for the current contour
 			cv::Rect bounding_rect = cv::boundingRect(contour);
 
@@ -425,8 +429,8 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 
 			// You can also extract the individual block as a separate image
 			cv::Mat extracted_block = image(bounding_rect);
-			// cv::imshow("Extracted Block " + std::to_string(block_count), extracted_block); 
-			// cv::imwrite("extracted_block_" + std::to_string(block_count) + ".jpg", extracted_block); // Save to file
+			 //cv::imshow("Extracted Block " + std::to_string(block_count), extracted_block); 
+			 //cv::imwrite("extracted_block_" + std::to_string(block_count) + ".jpg", extracted_block); // Save to file
 
 			partition.push_back(extracted_block); // Add the extracted block to the partition vector
 		}

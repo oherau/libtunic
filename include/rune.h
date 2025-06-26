@@ -105,7 +105,7 @@ const auto RUNE_SEGMENT_14 = { RUNE_POINT_H, RUNE_POINT_J };
 const auto RUNE_RADIUS_16 = { RUNE_POINT_M, RUNE_POINT_J };
 
 // in percent relative to height of the rune image (ex: height=130px  tickness=130*factor=6px)
-const auto RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS = 0.05;
+const auto RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS = 0.055;
 const auto RUNE_SEGMENT_DETECTION_FILTER_MASK_TICKNESS = 0.10; // 0.04;
 const auto RUNE_SEGMENT_DETECTION_DETECTION_MASK_TICKNESS = 0.04; // 0.04;
 
@@ -125,10 +125,10 @@ const auto RUNE_VOWEL_A         = 0x1013;
 const auto RUNE_VOWEL_AR        = 0x0c03;
 const auto RUNE_VOWEL_AH        = 0x1011;
 const auto RUNE_VOWEL_AY        = 0x0001;
-const auto RUNE_VOWEL_E         = 0x1c10;
+const auto RUNE_VOWEL_EH        = 0x1c10;
 const auto RUNE_VOWEL_EE        = 0x1c11;
 const auto RUNE_VOWEL_EER       = 0x1811;
-const auto RUNE_VOWEL_EH        = 0x0003;
+const auto RUNE_VOWEL_UH        = 0x0003;
 const auto RUNE_VOWEL_ERE       = 0x1810;
 const auto RUNE_VOWEL_I         = 0x0c00;
 const auto RUNE_VOWEL_IE        = 0x0002;
@@ -175,6 +175,11 @@ public:
     Rune(unsigned long bin);
     //Rune(std::string name);
     Rune(const Rune& rune);
+    Rune vowel_part() const;
+	Rune consonant_part() const;
+    bool is_reverse() const;
+	unsigned long get_value() const { return m_rune; }
+
     std::string to_pseudophonetic() const;
 	std::string to_hexa() const;
 	bool from_hexa(const std::string& hexString);

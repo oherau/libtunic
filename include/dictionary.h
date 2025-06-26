@@ -13,6 +13,7 @@ namespace fs = std::filesystem;
 
 const auto DICT_ENTRY_SEPARATOR = '=';
 const auto DICT_RUNE_SEPARATOR = '-';
+const auto DICT_RUNE_SEPARATOR_2 = ' ';
 const auto DICT_COMMENT = '#';
 
 class Dictionary {
@@ -35,6 +36,7 @@ public:
     std::string & operator[](std::string key) {
         return m_hashtable[key];
     }
+
 private:
     bool m_learning = false;
     std::map<std::string, std::string> m_hashtable;

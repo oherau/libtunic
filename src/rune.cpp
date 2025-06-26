@@ -14,6 +14,21 @@ Rune::Rune(unsigned long bin) : m_rune(bin)
 Rune::Rune(const Rune& rune) : m_rune(rune.m_rune)
 {}
 
+Rune Rune::vowel_part() const
+{
+	return Rune(m_rune & RUNE_VOWEL);
+}
+
+Rune Rune::consonant_part() const
+{
+	return Rune(m_rune & RUNE_CONSONANT);
+}
+
+bool Rune::is_reverse() const
+{
+	return (m_rune & RUNE_REVERSE);
+}
+
 std::string Rune::to_string(unsigned long bin) const {
 
     switch (bin) {
@@ -22,7 +37,7 @@ std::string Rune::to_string(unsigned long bin) const {
 	case RUNE_VOWEL_AR: return "AR";
 	case RUNE_VOWEL_AH: return "AH";
 	case RUNE_VOWEL_AY: return "AY";
-	case RUNE_VOWEL_E: return "E";
+	case RUNE_VOWEL_UH: return "UH";
 	case RUNE_VOWEL_EE: return "EE";
 	case RUNE_VOWEL_EER: return "EER";
 	case RUNE_VOWEL_EH: return "EH";
