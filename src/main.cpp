@@ -329,9 +329,9 @@ int test_image_detect_words() {
 	rune_detector.load_rune_folder(RUNES_FOLDER);
 
     const std::vector< std::pair<std::string, std::string> > test_set_001 = {
-        //{ "data/screenshots/found_an_item.jpg" , "found an item"},
+        { "data/screenshots/found_an_item.jpg" , "found an item"},
         //{ "data/screenshots/found_bracelet.png" , "found an item"},
-        { "data/screenshots/manual_page_10.jpg" , "lots of runes !!!"},
+        //{ "data/screenshots/manual_page_10.jpg" , "lots of runes !!!"},
     };
 
     int nb_fails = 0;

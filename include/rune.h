@@ -70,6 +70,20 @@ CONSONANTS
 
 */
 
+// in percent relative to height of the rune image (ex: height=130px  tickness=130*factor=6px)
+
+const auto RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS = 0.075; // thickness percent of the rune height (in booklet)
+
+
+const auto RUNE_SEGMENT_DETECTION_FILTER_MASK_TICKNESS = 0.10; // 0.04;
+const auto RUNE_SEGMENT_DETECTION_DETECTION_MASK_TICKNESS = 0.04; // 0.04;
+
+//const auto RUNE_DEFAULT_SIZE = cv::Size2i(50, 100); // Default size of the rune image
+//const auto RUNE_DEFAULT_SIZE = cv::Size2i(70, 130); // Default size of the rune image
+//const auto RUNE_DEFAULT_SIZE = cv::Size2d(460.00f, 1000.00f); // Default size of the rune image (perfect ratio for booklet printing)
+const auto RUNE_DEFAULT_SIZE = cv::Size2d(46.00f, 100.00f); // Default size of the rune image (perfect ratio for booklet printing)
+
+
 const cv::Point2d RUNE_POINT_A(50.00f, 0.00f);
 const cv::Point2d RUNE_POINT_B(100.00f, 12.73f);
 const cv::Point2d RUNE_POINT_C(50.00f, 27.42f);
@@ -78,11 +92,11 @@ const cv::Point2d RUNE_POINT_E(0.00f, 40.16f);
 const cv::Point2d RUNE_POINT_F(50.00f, 40.16f);
 const cv::Point2d RUNE_POINT_G(100.00f, 40.16f);
 const cv::Point2d RUNE_POINT_H(50.00f, 57.77f);
-const cv::Point2d RUNE_POINT_I(100.00f, 73.45f);
-const cv::Point2d RUNE_POINT_J(50.00f, 87.16f);
-const cv::Point2d RUNE_POINT_K(0.00f, 73.45f);
+const cv::Point2d RUNE_POINT_I(100.00f, 67.77f);
+const cv::Point2d RUNE_POINT_J(50.00f, 81.16f);
+const cv::Point2d RUNE_POINT_K(0.00f, 67.77f);
 const cv::Point2d RUNE_POINT_L(0.00f, 57.77f);
-const cv::Point2d RUNE_POINT_M(50.00f, 95.00f);
+const cv::Point2d RUNE_POINT_M(50.00f, 89.00f);
 
 
 const auto RUNE_SEGMENT_01 = { RUNE_POINT_A, RUNE_POINT_D };
@@ -104,14 +118,7 @@ const auto RUNE_SEGMENT_14 = { RUNE_POINT_H, RUNE_POINT_J };
 
 const auto RUNE_RADIUS_16 = { RUNE_POINT_M, RUNE_POINT_J };
 
-// in percent relative to height of the rune image (ex: height=130px  tickness=130*factor=6px)
-const auto RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS = 0.055;
-const auto RUNE_SEGMENT_DETECTION_FILTER_MASK_TICKNESS = 0.10; // 0.04;
-const auto RUNE_SEGMENT_DETECTION_DETECTION_MASK_TICKNESS = 0.04; // 0.04;
 
-//const auto RUNE_DEFAULT_SIZE = cv::Size2i(50, 100); // Default size of the rune image
-//const auto RUNE_DEFAULT_SIZE = cv::Size2i(70, 130); // Default size of the rune image
-const auto RUNE_DEFAULT_SIZE = cv::Size2d(23.75f, 51.00f); // Default size of the rune image
 
 
 // MASKS
