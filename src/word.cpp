@@ -8,6 +8,11 @@ Word::Word(const std::string& str)
 	parse_runes(str, m_runes);
 }
 
+Word::Word(const std::vector<Rune>& runes)
+{
+	m_runes = runes;
+}
+
 std::string Word::get_hash() const
 {
 	std::stringstream ss;

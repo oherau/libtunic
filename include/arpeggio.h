@@ -78,12 +78,14 @@ class Arpeggio {
 public:
     Arpeggio() = default;
 	Arpeggio(const std::vector<Rune>& runes);
+	Arpeggio(const std::vector<int>& sequence);
 	Arpeggio(const Word& word);
     //Arpeggio(const std::initializer_list<int>& consonnant, const std::initializer_list<int>& vowel, bool reverse);
 	bool append_rune(const Rune& rune);
-	Rune to_rune() const;
+	std::vector<Rune> to_runes() const;
 	int get_length() const;
 	static std::vector<int> get_rune_arpeggio_sequence(unsigned long rune);
+	bool operator==(const Arpeggio& other) const;
 private:
     std::vector<int> m_sequence;
 };

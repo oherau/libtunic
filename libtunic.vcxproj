@@ -141,6 +141,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="include\note.cpp" />
     <ClCompile Include="src\arpeggio.cpp" />
     <ClCompile Include="src\dictionary.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -152,6 +153,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\arpeggio.h" />
+    <ClInclude Include="include\color_print.h" />
     <ClInclude Include="include\dictionary.h" />
     <ClInclude Include="include\note.h" />
     <ClInclude Include="include\arpeggiodetector.h" />

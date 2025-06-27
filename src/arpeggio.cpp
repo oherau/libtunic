@@ -8,8 +8,16 @@ Arpeggio::Arpeggio(const std::vector<Rune>& runes)
 	}
 }
 
+Arpeggio::Arpeggio(const std::vector<int>& sequence)
+{
+	m_sequence = sequence;
+}
+
 Arpeggio::Arpeggio(const Word& word)
 {
+	if (word.get_hash() == "9f14-3c9e") {
+		int a = 0; /// DEBUG
+	}
 	for (const auto& rune : word.get_runes()) {
 		append_rune(rune);
 	}
@@ -56,9 +64,28 @@ bool Arpeggio::append_rune(const Rune& rune)
 	return true;
 }
 
-Rune Arpeggio::to_rune() const
+
+// might be too complex this way for now (rely on dictionary for the moment)
+std::vector<Rune> Arpeggio::to_runes() const
 {
-	return Rune();
+	std::vector<Rune> result;
+
+	//for (size_t i = 0; i < m_sequence.size(); i += 2) {
+	//	if (i + 1 < m_sequence.size()) {
+	//		auto consonnant = m_sequence[i];
+	//		auto vowel = m_sequence[i + 1];
+	//		Rune rune(consonnant, vowel);
+	//		result.push_back(rune);
+	//	}
+	//	else {
+	//		// If there's an odd number of elements, the last one is a consonnant without a vowel
+	//		Rune rune(m_sequence[i], RUNE_VOWEL_NULL);
+	//		result.push_back(rune);
+	//	}
+	//}
+
+
+	return std::vector<Rune>(result);
 }
 
 int Arpeggio::get_length() const
@@ -147,9 +174,26 @@ std::vector<int> Arpeggio::get_rune_arpeggio_sequence(unsigned long rune)
 			return ARPEGGIO_VOWEL_OO;
 		case RUNE_VOWEL_AY:
 			return ARPEGGIO_VOWEL_AY;
+		case RUNE_VOWEL_IR:
+			return ARPEGGIO_VOWEL_IR;
 		case RUNE_NULL:
 		default:
 			return std::vector<int>();
 	}
 	return std::vector<int>();
+}
+
+bool Arpeggio::operator==(const Arpeggio& other) const
+{
+	if(this->m_sequence.size() != other.m_sequence.size()) {
+		return false;
+	}
+
+	for(size_t i = 0; i < this->m_sequence.size(); ++i) {
+		if(this->m_sequence[i] != other.m_sequence[i]) {
+			return false;
+		}
+	}
+
+	return true;
 }

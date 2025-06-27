@@ -65,12 +65,6 @@ bool Dictionary::load(const fs::path& filePath) {
     }
     file.close();
 
-    // printf("%s\n\nm_hashtable:\n", line.c_str());
-
-    // for(const auto& [key, value] : m_hashtable) {
-    //     printf("[%s] = [%s]\n", key.c_str(), value.c_str());
-    // }
-
     printf("\n");
     return true;
 }
@@ -219,6 +213,9 @@ std::string Dictionary::translate(const std::vector<Note>& notes) {
 
         std::deque<Note> wordBuffer(noteBuffer);
         while(wordBuffer.size() >= notes_min_length ) {
+
+            auto indexed_sequence = ArpeggioDetector::get_indexed_note_sequence(wordBuffer);
+
 
             std::string str = notes_to_string(wordBuffer, true);
             // std::cout << "  try to translate: " <<  str << std::endl;

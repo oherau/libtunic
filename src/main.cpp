@@ -10,11 +10,12 @@
 #include "rune.h"
 #include "runedetector.h"
 #include "word.h"
+#include "color_print.h"
 //#include "libtuneic.h"
 namespace fs = std::filesystem;
 
 // catch2 mocking
-#define CHECK( x ) { if(!(x)) { printf("[ KO ] %s\n", #x);}  }
+#define CHECK( x ) { if(!(x)) { std::cout << ANSI::RED << " [ KO ] " << #x << ANSI::RESET << std::endl;}  }
 
 
 // Platform-specific headers
@@ -75,6 +76,7 @@ const auto DICTIONARY_EN = fs::path("lang/dictionary.txt");
 
 int test();
 int test_audio();
+int test_audio_detection();
 int test_image_detect_words();
 int test_rune();
 int test_word();
@@ -87,7 +89,7 @@ int test_arpeggio_sequence();
 
 /////////////////////////////////////////
 
-int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length);
+int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, std::string& result);
 int image_detection(const fs::path& dictionary_file, const fs::path& image_file);
 
 int main(int argc, char* argv[]) {
@@ -115,7 +117,8 @@ int main(int argc, char* argv[]) {
             note_length = std::stod(argv[2]);
         }
 
-        int detection_result = audio_detection(DICTIONARY_EN, fs::path(filename), note_length);
+		std::string result;
+        int detection_result = audio_detection(DICTIONARY_EN, fs::path(filename), note_length, result);
     }
     if (fs::path(filename).extension() == ".jpg") {
         int detection_result = image_detection(RUNES_FOLDER, fs::path(filename));
@@ -149,7 +152,7 @@ int image_detection(const fs::path& dictionary_file, const fs::path& image_file)
 	return -1; // Placeholder for image detection logic
 }
 
-int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length) {
+int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, std::string& result) {
 
     // DETECTION MODE
     Dictionary dictionary(dictionary_file);
@@ -176,10 +179,9 @@ int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file,
     }
     std::cout << std::endl << std::endl;
 
-
-    std::string translated = dictionary.translate(note_sequence);
+    result = dictionary.translate(note_sequence);
     std::cout << std::endl ;
-    std::cout << "==== TRANSLATION ==== " << std::endl << translated << std::endl << std::endl;
+    std::cout << "==== TRANSLATION ==== " << std::endl << result << std::endl << std::endl;
 
     return 0;
 }
@@ -193,26 +195,19 @@ int test_check(const T& expected, const T& result) {
 }
 
 int test() {
-    int result = 0;
-    //result += test_dictionary_load_save();
-    //result += test_rune();
-    //result += test_word();
-	//result += test_audio();
-    result += test_dictionary_image_gen();
-    result += test_image_detect_words();
-    //result += test_rune_image_generation();
-    //result += test_decode_word_image();
-	//result += test_dictionarize();
-	//result += test_arpeggio_sequence();
+    //test_dictionary_load_save();
+    //test_rune();
+    //test_word();
+	//test_audio();
+    test_audio_detection();
+    //test_dictionary_image_gen();
+    //test_image_detect_words();
+    //test_rune_image_generation();
+    //test_decode_word_image();
+	//test_dictionarize();
+	//test_arpeggio_sequence();
 
-
-
-    if (result == 0) {
-        std::cout << "All tests passed!" << std::endl;
-    } else {
-        std::cout << result << " tests failed." << std::endl;
-    }
-	return result;
+    return 0;
 }
 
 int test_rune() {
@@ -316,6 +311,35 @@ int test_audio() {
 
     return nb_fails;
 }
+
+int test_audio_detection() {
+    std::cout << std::endl << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << "=====      AUDIO DETECTION- TEST MODE     =====" << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << std::endl;
+
+    Dictionary dictionary(DICTIONARY_EN);
+
+    const std::vector< std::pair<std::string, std::string> > test_set_001 = {
+        { "data/audio_captures/open_chest.wav" , "found an item"},
+    };
+
+    int nb_fails = 0;
+    for (const auto& test : test_set_001) {
+        auto audio_file = test.first;
+        auto expected = test.second;
+
+        auto file = fs::path(audio_file);
+        std::string result;
+		audio_detection(DICTIONARY_EN, file, 75, result);
+        CHECK(result == expected);
+		nb_fails += (expected != result);
+    }
+
+    return nb_fails;
+}
+
 
 int test_image_detect_words() {
     std::cout << std::endl << std::endl;
@@ -543,6 +567,7 @@ int test_arpeggio_sequence() {
     std::cout << std::endl;
 
     Dictionary dictionary(DICTIONARY_EN);
+    dictionary.save(DICTIONARY_EN);
 
     const std::vector< std::pair<std::vector<int>, std::string> > test_set_001 = {
         { {13, 12, 9, 6, 2, 1} , "own"},
@@ -557,14 +582,21 @@ int test_arpeggio_sequence() {
 
     for(const auto& test : test_set_001) {
         auto arpeggio_sequence = test.first;
+		Arpeggio arpeggio(arpeggio_sequence);
         auto expected = test.second;
 
 		std::vector<Rune> detected_runes;
-        bool result = arpeggio_detector.detect_runes(arpeggio_sequence, detected_runes);
-		std::string translation = dictionary.translate(detected_runes);
+        //auto runes = arpeggio.to_runes();
+        //Word word(runes);
+		auto word = arpeggio_detector.find(arpeggio);
 
-		CHECK(translation == expected);
-        nb_fails += (translation == expected ? 0 : 1);
+		CHECK(word.is_valid());
+        if (word.is_valid()) {
+            std::string translation = dictionary.translate(word);
+            CHECK(translation == expected);
+            nb_fails += (translation == expected ? 0 : 1);
+        }
+
 	}
 
     CHECK(nb_fails == 0);

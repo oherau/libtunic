@@ -9,6 +9,7 @@ class Word {
 public:
 	Word() = default;
 	Word(const std::string& str);
+	Word(const std::vector<Rune>& runes);
 	std::string get_hash() const;
 	std::string to_pseudophonetic() const;
 	bool parse_runes(const std::string& str, std::vector<Rune>& runes);
@@ -16,6 +17,7 @@ public:
 	size_t size() const { return m_runes.size(); }
 	bool generate_image(cv::Size2i rune_size, int tickness, cv::Mat& output_image) const;
 	std::vector<Rune> get_runes() const { return m_runes; }
+	bool is_valid() const { return !m_runes.empty(); }
 private:
 	std::vector<Rune> m_runes;
 };
