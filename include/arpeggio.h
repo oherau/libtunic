@@ -6,26 +6,6 @@
 #include <word.h>
 
 
-
-
-
-
-// bits describing arpeggio sequence
-// C	D	Eb	G	Ab2	C2	D2	Eb2	G2	Ab3	C3
-
-const auto NOTE_C   = 0b10000000000;
-const auto NOTE_D   = 0b01000000000;
-const auto NOTE_Eb  = 0b00100000000;
-const auto NOTE_G   = 0b00010000000;
-const auto NOTE_Ab2 = 0b00001000000;
-const auto NOTE_C2  = 0b00000100000;
-const auto NOTE_D2  = 0b00000010000;
-const auto NOTE_Eb2 = 0b00000001000;
-const auto NOTE_G2  = 0b00000000100;
-const auto NOTE_Ab3 = 0b00000000010;
-const auto NOTE_C3  = 0b00000000001;
-
-
 // CONSONNANTS - same octave as the fundamental
 
 const auto ARPEGGIO_CONSONANT_S = { 2 };

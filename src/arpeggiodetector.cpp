@@ -32,25 +32,43 @@ std::string note_to_string(Note note, bool no_octave) {
         {Note::UNKNOWN, "UNKNOWN"},
         {Note::SILENCE, "SILENCE"},
 
-        // Only keep fundamentals and sharp notations 
+        // Only keep fundamentals and flat notations
+        // Octave 0
         {Note::C0, "C0"}, {Note::D_FLAT0, "Db0"}, {Note::D0, "D0"}, {Note::E_FLAT0, "Eb0"},
         {Note::E0, "E0"}, {Note::F0, "F0"}, {Note::G_FLAT0, "Gb0"}, {Note::G0, "G0"},
         {Note::A_FLAT0, "Ab0"}, {Note::A0, "A0"}, {Note::B_FLAT0, "Bb0"}, {Note::B0, "B0"},
+        // Octave 1
         {Note::C1, "C1"}, {Note::D_FLAT1, "Db1"}, {Note::D1, "D1"}, {Note::E_FLAT1, "Eb1"},
         {Note::E1, "E1"}, {Note::F1, "F1"}, {Note::G_FLAT1, "Gb1"}, {Note::G1, "G1"},
         {Note::A_FLAT1, "Ab1"}, {Note::A1, "A1"}, {Note::B_FLAT1, "Bb1"}, {Note::B1, "B1"},
+        // Octave 2
         {Note::C2, "C2"}, {Note::D_FLAT2, "Db2"}, {Note::D2, "D2"}, {Note::E_FLAT2, "Eb2"},
         {Note::E2, "E2"}, {Note::F2, "F2"}, {Note::G_FLAT2, "Gb2"}, {Note::G2, "G2"},
         {Note::A_FLAT2, "Ab2"}, {Note::A2, "A2"}, {Note::B_FLAT2, "Bb2"}, {Note::B2, "B2"},
+        // Octave 3
         {Note::C3, "C3"}, {Note::D_FLAT3, "Db3"}, {Note::D3, "D3"}, {Note::E_FLAT3, "Eb3"},
         {Note::E3, "E3"}, {Note::F3, "F3"}, {Note::G_FLAT3, "Gb3"}, {Note::G3, "G3"},
         {Note::A_FLAT3, "Ab3"}, {Note::A3, "A3"}, {Note::B_FLAT3, "Bb3"}, {Note::B3, "B3"},
+        // Octave 4
         {Note::C4, "C4"}, {Note::D_FLAT4, "Db4"}, {Note::D4, "D4"}, {Note::E_FLAT4, "Eb4"},
         {Note::E4, "E4"}, {Note::F4, "F4"}, {Note::G_FLAT4, "Gb4"}, {Note::G4, "G4"},
         {Note::A_FLAT4, "Ab4"}, {Note::A4, "A4"}, {Note::B_FLAT4, "Bb4"}, {Note::B4, "B4"},
+        // Octave 5
         {Note::C5, "C5"}, {Note::D_FLAT5, "Db5"}, {Note::D5, "D5"}, {Note::E_FLAT5, "Eb5"},
         {Note::E5, "E5"}, {Note::F5, "F5"}, {Note::G_FLAT5, "Gb5"}, {Note::G5, "G5"},
-        {Note::A_FLAT5, "Ab5"}, {Note::A5, "A5"}, {Note::B_FLAT5, "Bb5"}, {Note::B5, "B5"}
+        {Note::A_FLAT5, "Ab5"}, {Note::A5, "A5"}, {Note::B_FLAT5, "Bb5"}, {Note::B5, "B5"},
+        // Octave 6
+        {Note::C6, "C6"}, {Note::D_FLAT6, "Db6"}, {Note::D6, "D6"}, {Note::E_FLAT6, "Eb6"},
+        {Note::E6, "E6"}, {Note::F6, "F6"}, {Note::G_FLAT6, "Gb6"}, {Note::G6, "G6"},
+        {Note::A_FLAT6, "Ab6"}, {Note::A6, "A6"}, {Note::B_FLAT6, "Bb6"}, {Note::B6, "B6"},
+        // Octave 7
+        {Note::C7, "C7"}, {Note::D_FLAT7, "Db7"}, {Note::D7, "D7"}, {Note::E_FLAT7, "Eb7"},
+        {Note::E7, "E7"}, {Note::F7, "F7"}, {Note::G_FLAT7, "Gb7"}, {Note::G7, "G7"},
+        {Note::A_FLAT7, "Ab7"}, {Note::A7, "A7"}, {Note::B_FLAT7, "Bb7"}, {Note::B7, "B7"},
+        // Octave 8
+        {Note::C8, "C8"}, {Note::D_FLAT8, "Db8"}, {Note::D8, "D8"}, {Note::E_FLAT8, "Eb8"},
+        {Note::E8, "E8"}, {Note::F8, "F8"}, {Note::G_FLAT8, "Gb8"}, {Note::G8, "G8"},
+        {Note::A_FLAT8, "Ab8"}, {Note::A8, "A8"}, {Note::B_FLAT8, "Bb8"}, {Note::B8, "B8"}
     };
 
     static const std::map<Note, std::string> note_to_string_map_simplified = {
@@ -254,24 +272,29 @@ void ArpeggioDetector::processFile(const std::filesystem::path& filePath, std::v
 // Function to get the indexed note sequence from a deque of notes
 // should get arpeggio in the form of a vector of integers. with lower note index = 1
 // ex: {13, 12, 6, 2, 1, 3, 6, 10, 12, 13} = "enter
-std::vector<int> ArpeggioDetector::get_indexed_note_sequence(std::deque<Note>& note_sequence)
+std::vector<int> ArpeggioDetector::get_indexed_note_sequence(std::vector<Note>& note_sequence, ScaleType scale)
 {
-    auto min_note = INT_MAX;
+    // get the root note (the lower in the sequence)
+    AbsoluteNoteIndex root_note = INT_MAX;
     for (const auto& note : note_sequence) {
         if (note != Note::SILENCE && note != Note::UNKNOWN) {
-            min_note = std::min(min_note, static_cast<int>(note));
+            root_note = std::min(root_note, static_cast<int>(note));
         }
     }
 
-    std::vector<int> result;
+    // convert vector<Note> to vector<AbsoluteNoteIndex> (should not be necessary)
+    std::vector<AbsoluteNoteIndex> absolute_notes;
     for (const auto& note : note_sequence) {
         if (note != Note::SILENCE && note != Note::UNKNOWN) {
-            result.push_back(static_cast<int>(note) - min_note + 1);
+            absolute_notes.push_back(static_cast<AbsoluteNoteIndex>(note));
         }
         else {
-            result.push_back(0); // Use -1 to represent SILENCE or UNKNOWN
+            absolute_notes.push_back(0); // Use -1 to represent SILENCE or UNKNOWN
         }
     }
+
+    // convert absolute notes to index relative to the given scale
+    auto result = convert_to_scale_relative_indices(absolute_notes, scale, root_note);
 
     return std::vector<int>(result);
 }
@@ -288,4 +311,34 @@ Word ArpeggioDetector::find(const Arpeggio& arpeggio)
     }
 
     return Word();
+}
+
+bool ArpeggioDetector::detect_words(const std::vector<Note>& notes, std::vector<Word>& words) {
+    std::stringstream ssout;
+
+    for (auto note_range_begin = notes.begin(); note_range_begin != notes.end(); ++note_range_begin) {
+
+        auto distance_to_end = std::distance(note_range_begin, notes.end());
+        auto note_range_end_start = distance_to_end > m_arpeggio_max_length ? (note_range_begin + m_arpeggio_max_length) : (notes.end() - 1);
+        for (auto note_range_end = note_range_end_start; note_range_end != note_range_begin; --note_range_end) {
+
+			auto arpeggio_length = std::distance(note_range_begin, note_range_end) + 1;
+            if (arpeggio_length < m_arpeggio_min_length) {
+                break; // skip if the range is too short
+            }
+
+            std::vector<Note> note_range(note_range_begin, note_range_end + 1);
+            auto indexed_sequence = ArpeggioDetector::get_indexed_note_sequence(note_range);
+
+            auto word = find(indexed_sequence);
+            if(word.is_valid()) {
+                // std::cout << "Found word: " << word.get_hash() << std::endl;
+                words.push_back(word);
+				note_range_begin = (note_range_end - 1); // Move the start index forward and keep the last note in case it is used as the first note of the next arpeggio
+				break; // Found a word, break the inner loop to start a new search
+            }
+        }
+    }
+
+    return true;
 }

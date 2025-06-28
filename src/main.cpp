@@ -11,11 +11,12 @@
 #include "runedetector.h"
 #include "word.h"
 #include "color_print.h"
+#include "note.h"
 //#include "libtuneic.h"
 namespace fs = std::filesystem;
 
 // catch2 mocking
-#define CHECK( x ) { if(!(x)) { std::cout << ANSI::RED << " [ KO ] " << #x << ANSI::RESET << std::endl;}  }
+#define CHECK( x ) { if(!(x)) { std::cout << ANSI::RED << " [ KO ] " << #x << ANSI::RESET << std::endl;} else { std::cout << ANSI::GREEN << " [ OK ] " << #x << ANSI::RESET << std::endl;}  }
 
 
 // Platform-specific headers
@@ -86,6 +87,8 @@ int test_decode_word_image();
 int test_dictionary_load_save();
 int test_dictionarize();
 int test_arpeggio_sequence();
+int test_audio_detect_words();
+int test_audio_get_indexed_note_sequence();
 
 /////////////////////////////////////////
 
@@ -179,9 +182,23 @@ int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file,
     }
     std::cout << std::endl << std::endl;
 
-    result = dictionary.translate(note_sequence);
+	ArpeggioDetector arpeggio_detector;
+    arpeggio_detector.load_dictionary(dictionary);
+
+    std::vector<Word> words;
+    bool detecttion_res = arpeggio_detector.detect_words(note_sequence, words);
+
+    //result = dictionary.translate(note_sequence);
     std::cout << std::endl ;
-    std::cout << "==== TRANSLATION ==== " << std::endl << result << std::endl << std::endl;
+    std::cout << "==== DETECTED WORDS ==== " << std::endl << result << std::endl << std::endl;
+    for (const auto& word : words) {
+        auto word_hash = word.get_hash();
+        std::string word_translation;
+        if (dictionary.get_translation(word_hash, word_translation)) {
+            std::cout << word_translation << " ";
+        }
+    }
+    std::cout << std::endl << std::endl;
 
     return 0;
 }
@@ -199,7 +216,9 @@ int test() {
     //test_rune();
     //test_word();
 	//test_audio();
-    test_audio_detection();
+    //test_audio_detection();
+    //test_audio_detect_words();
+    test_audio_get_indexed_note_sequence();
     //test_dictionary_image_gen();
     //test_image_detect_words();
     //test_rune_image_generation();
@@ -307,34 +326,6 @@ int test_audio() {
         auto translated = dictionary.translate(rune_sequence);
         nb_fails += test_check(expected, translated);
 
-    }
-
-    return nb_fails;
-}
-
-int test_audio_detection() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "=====      AUDIO DETECTION- TEST MODE     =====" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
-
-    Dictionary dictionary(DICTIONARY_EN);
-
-    const std::vector< std::pair<std::string, std::string> > test_set_001 = {
-        { "data/audio_captures/open_chest.wav" , "found an item"},
-    };
-
-    int nb_fails = 0;
-    for (const auto& test : test_set_001) {
-        auto audio_file = test.first;
-        auto expected = test.second;
-
-        auto file = fs::path(audio_file);
-        std::string result;
-		audio_detection(DICTIONARY_EN, file, 75, result);
-        CHECK(result == expected);
-		nb_fails += (expected != result);
     }
 
     return nb_fails;
@@ -600,5 +591,129 @@ int test_arpeggio_sequence() {
 	}
 
     CHECK(nb_fails == 0);
+    return nb_fails;
+}
+
+int test_audio_get_indexed_note_sequence() {
+    std::cout << std::endl << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << "== AUDIO GET INDEXED NOTE SEQ - TEST MODE   ===" << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << std::endl;
+
+    Dictionary dictionary(DICTIONARY_EN);
+
+    ArpeggioDetector arpeggio_detector;
+    arpeggio_detector.load_dictionary(dictionary);
+
+    // test set from the documentation
+    const std::vector< std::pair<std::vector<Note>, std::vector<int>> > test_set_001 = {
+        { {Note::F5, Note::G5, Note::D6, Note::G6, Note::C7, Note::D7 } , {1, 2, 6, 9, 12, 13}},
+        { {Note::C5, Note::D5, Note::A5, Note::D6, Note::G6, Note::A6 } , {1, 2, 6, 9, 12, 13}},
+        { {Note::E_FLAT5, Note::F5, Note::C6, Note::F6, Note::B_FLAT6, Note::C7 } , {1, 2, 6, 9, 12, 13}},
+        { {Note::B_FLAT4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {1, 2, 6, 9, 12, 13}},
+
+    };
+
+    int nb_fails = 0;
+    for (const auto& test : test_set_001) {
+        auto note_sequence = test.first;
+        auto expected = test.second;
+
+        int scale = 0;
+        std::vector<int> indexed_sequence;
+        for (scale = static_cast<int>(ScaleType::Major); scale <= static_cast<int>(ScaleType::Chromatic); ++scale) {
+            indexed_sequence = ArpeggioDetector::get_indexed_note_sequence(note_sequence, (ScaleType)scale);
+            if (indexed_sequence == expected)
+                break;
+        }
+        CHECK(indexed_sequence == expected);
+
+        if (scale <= (int)ScaleType::Chromatic)
+            std::cout << "Scale used:" << scale << std::endl;
+        std::cout << "expected:         ";
+        for (auto x : expected) std::cout << x << " ";
+        std::cout << std::endl;
+        std::cout << "indexed_sequence: ";
+        for (auto x : indexed_sequence) std::cout << x << " ";
+        std::cout << std::endl;
+            
+        if (indexed_sequence != expected) {
+            nb_fails++;
+        }
+        std::cout << std::endl;
+    }
+
+    return nb_fails;
+}
+
+int test_audio_detect_words() {
+    std::cout << std::endl << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << "=====    AUDIO DETECT WORDS- TEST MODE    =====" << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << std::endl;
+
+    Dictionary dictionary(DICTIONARY_EN);
+
+    ArpeggioDetector arpeggio_detector;
+    arpeggio_detector.load_dictionary(dictionary);
+
+    // test set from the documentation
+    const std::vector< std::pair<std::vector<Note>, std::vector<std::string>> > test_set_001 = {
+        { {Note::F5, Note::G5, Note::D6, Note::G6, Note::C7, Note::D7 } , {"no"}},
+        { {Note::C5, Note::D5, Note::A5, Note::D6, Note::G6, Note::A6 } , {"no"}},
+        { {Note::E_FLAT5, Note::F5, Note::C6, Note::F6, Note::B_FLAT6, Note::C7 } , {"no"}},
+        { {Note::B_FLAT4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {"no"}},
+
+    };
+
+    int nb_fails = 0;
+    for (const auto& test : test_set_001) {
+        auto note_sequence = test.first;
+        auto expected = test.second;
+
+        std::vector<Word> words;
+        arpeggio_detector.detect_words(note_sequence, words);
+
+        std::vector<std::string> result;
+        for (const auto& word : words) {
+            std::string translation = "";
+            dictionary.get_translation(word.get_hash(), translation);
+            result.push_back(translation);
+        }
+
+        CHECK(result == expected);
+        nb_fails += (result == expected ? 0 : 1);
+    }
+
+    return nb_fails;
+}
+
+int test_audio_detection() {
+    std::cout << std::endl << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << "=====      AUDIO DETECTION- TEST MODE     =====" << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << std::endl;
+
+    Dictionary dictionary(DICTIONARY_EN);
+
+    const std::vector< std::pair<std::string, std::string> > test_set_001 = {
+        { "data/audio_captures/open_chest.wav" , "found an item"},
+    };
+
+    int nb_fails = 0;
+    for (const auto& test : test_set_001) {
+        auto audio_file = test.first;
+        auto expected = test.second;
+
+        auto file = fs::path(audio_file);
+        std::string result;
+        audio_detection(DICTIONARY_EN, file, 50, result);
+        CHECK(result == expected);
+        nb_fails += (expected != result);
+    }
+
     return nb_fails;
 }

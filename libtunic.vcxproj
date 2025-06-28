@@ -141,7 +141,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="include\note.cpp" />
+    <ClCompile Include="src\note.cpp" />
     <ClCompile Include="src\arpeggio.cpp" />
     <ClCompile Include="src\dictionary.cpp" />
     <ClCompile Include="src\main.cpp" />

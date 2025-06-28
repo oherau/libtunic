@@ -68,7 +68,19 @@ const std::map<Note, double> target_notes = {
     // Octave 5
     {Note::C5, 523.25}, {Note::D_FLAT5, 554.37}, {Note::D5, 587.33}, {Note::E_FLAT5, 622.25},
     {Note::E5, 659.26}, {Note::F5, 698.46}, {Note::G_FLAT5, 739.99}, {Note::G5, 783.99},
-    {Note::A_FLAT5, 830.61}, {Note::A5, 880.00}, {Note::B_FLAT5, 932.33}, {Note::B5, 987.77}
+    {Note::A_FLAT5, 830.61}, {Note::A5, 880.00}, {Note::B_FLAT5, 932.33}, {Note::B5, 987.77},
+    // Octave 6
+    { Note::C6, 1046.50 }, {Note::D_FLAT6, 1108.73}, {Note::D6, 1174.66}, {Note::E_FLAT6, 1244.51},
+    {Note::E6, 1318.51}, {Note::F6, 1396.91}, {Note::G_FLAT6, 1479.98}, {Note::G6, 1567.98},
+    {Note::A_FLAT6, 1661.22}, {Note::A6, 1760.00}, {Note::B_FLAT6, 1864.66}, {Note::B6, 1975.53},
+    // Octave 7
+    {Note::C7, 2093.00}, {Note::D_FLAT7, 2217.46}, {Note::D7, 2349.32}, {Note::E_FLAT7, 2489.02},
+    {Note::E7, 2637.02}, {Note::F7, 2793.83}, {Note::G_FLAT7, 2959.96}, {Note::G7, 3135.96},
+    {Note::A_FLAT7, 3322.44}, {Note::A7, 3520.00}, {Note::B_FLAT7, 3729.31}, {Note::B7, 3951.07},
+    // Octave 8
+    {Note::C8, 4186.01}, {Note::D_FLAT8, 4434.92}, {Note::D8, 4698.64}, {Note::E_FLAT8, 4978.03},
+    {Note::E8, 5274.04}, {Note::F8, 5587.65}, {Note::G_FLAT8, 5919.91}, {Note::G8, 6271.93},
+    {Note::A_FLAT8, 6644.88}, {Note::A8, 7040.00}, {Note::B_FLAT8, 7458.62}, {Note::B8, 7902.13}
 };
 
 // "Enum to string" function
@@ -84,8 +96,9 @@ public:
     void processFile(const std::filesystem::path& filePath, std::vector<Note>& detected_sequence, double note_length = DEFAULT_NOTE_LENGTH);
     std::vector<Note> get_clean_sequence(const std::vector<Note>& sequence);
     Word find(const Arpeggio& arpeggio);
-	std::vector<Rune> get_runes_from_arpeggio(const Arpeggio& arpeggio);
-    static std::vector<int> get_indexed_note_sequence(std::deque<Note>& note_sequence);
+	//std::vector<Rune> get_runes_from_arpeggio(const Arpeggio& arpeggio);
+    static std::vector<int> get_indexed_note_sequence(std::vector<Note>& note_sequence, ScaleType scale = ScaleType::Mixolydian);
+    bool detect_words(const std::vector<Note>& notes, std::vector<Word>& words);
 private:
     Note findClosestNote(double frequency);
     void detectNoteSequence(const std::vector<float>& samples, uint32_t sampleRate, std::vector<Note>& detected_sequence, double note_length = DEFAULT_NOTE_LENGTH);

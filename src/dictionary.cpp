@@ -198,44 +198,6 @@ std::string Dictionary::translate(const Word& word) {
     return std::string(str);
 }
 
-std::string Dictionary::translate(const std::vector<Note>& notes) {
-    std::stringstream ssout;
-    std::deque<Note> noteBuffer;
-
-    // std::cout << "--- START TRANSLATION ---" << std::endl;
-    // std::cout << "  notes_min_length: " << notes_min_length << std::endl;
-    // std::cout << "  notes_max_length: " << notes_max_length << std::endl;
-    for(const auto& note : notes) {
-        noteBuffer.push_back(note);
-        if(noteBuffer.size() > notes_max_length) {
-            noteBuffer.pop_front();
-        }
-
-        std::deque<Note> wordBuffer(noteBuffer);
-        while(wordBuffer.size() >= notes_min_length ) {
-
-            auto indexed_sequence = ArpeggioDetector::get_indexed_note_sequence(wordBuffer);
-
-
-            std::string str = notes_to_string(wordBuffer, true);
-            // std::cout << "  try to translate: " <<  str << std::endl;
-            std::string translated = translate(str);
-            // std::cout << "  translated: " <<  translated << std::endl;
-
-            if(translated.size() > 0) {
-                std::cout << str << " => " <<  translated << std::endl;
-                ssout << translated << " ";
-                noteBuffer.clear();
-                wordBuffer.clear();
-                break; // while
-            }
-            wordBuffer.pop_front();
-        }
-    }
-
-    return std::string(ssout.str());
-}
-
 std::string Dictionary::translate(const std::vector<Rune>& runes) {
 
     std::stringstream ss;

@@ -15,9 +15,6 @@ Arpeggio::Arpeggio(const std::vector<int>& sequence)
 
 Arpeggio::Arpeggio(const Word& word)
 {
-	if (word.get_hash() == "9f14-3c9e") {
-		int a = 0; /// DEBUG
-	}
 	for (const auto& rune : word.get_runes()) {
 		append_rune(rune);
 	}
