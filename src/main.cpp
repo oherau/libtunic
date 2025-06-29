@@ -163,8 +163,8 @@ int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file,
     std::vector<float> audioData;
 
     ArpeggioDetector noteDetector;
-    std::vector<Note> detected_sequence;
-    noteDetector.processFile(audio_file, detected_sequence, note_length);
+    std::vector<Note> detected_sequence = noteDetector.detect_note_sequence(audio_file, note_length);
+    //std::vector<Note> detected_sequence = noteDetector.detect_note_sequence_aubio(audio_file);
 
     // detected sequence
     std::cout << "==== detected_sequence ====" << std::endl;
@@ -212,20 +212,24 @@ int test_check(const T& expected, const T& result) {
 }
 
 int test() {
-    //test_dictionary_load_save();
-    //test_rune();
-    //test_word();
-	//test_audio();
-    //test_audio_detection();
-    //test_audio_detect_words();
-    test_audio_detect_words();
-    test_audio_get_indexed_note_sequence();
-    //test_dictionary_image_gen();
-    //test_image_detect_words();
-    //test_rune_image_generation();
-    //test_decode_word_image();
-	//test_dictionarize();
-	//test_arpeggio_sequence();
+    int nb_fails = 0;
+    nb_fails += test_dictionary_load_save();
+    nb_fails += test_rune();
+    nb_fails += test_word();
+	nb_fails += test_audio();
+    nb_fails += test_audio_get_indexed_note_sequence();
+    nb_fails += test_audio_detect_words();
+    nb_fails += test_audio_detection();
+    //nb_fails += test_dictionary_image_gen();
+    //nb_fails += test_image_detect_words();
+    //nb_fails += test_rune_image_generation();
+    //nb_fails += test_decode_word_image();
+	//nb_fails += test_dictionarize();
+	//nb_fails += test_arpeggio_sequence();
+
+    std::cout << "===============================================" << std::endl;
+    
+    CHECK(nb_fails = 0);
 
     return 0;
 }
@@ -386,7 +390,7 @@ int test_rune_image_generation() {
 
         cv::Mat result;
 		auto rune_size = RUNE_DEFAULT_SIZE; // Size of the rune image
-        int tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image 
+        auto tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image 
 		word.generate_image(rune_size, tickness, result);
   
 
@@ -446,7 +450,7 @@ int test_decode_word_image() {
 
         cv::Mat detected_word_img;
         cv::Size rune_size = RUNE_DEFAULT_SIZE;
-        int tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image
+        auto tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height; // Thickness of the lines in the image
 
         if (decoded_word.generate_image(rune_size, tickness, detected_word_img)) {
 
@@ -685,7 +689,7 @@ int test_audio_detect_words() {
         {  {Note::C5, Note::D5, Note::A5, Note::D6, Note::G6, Note::A6 } , {"no"}},
         {  {Note::Eb5, Note::F5, Note::C6, Note::F6, Note::Bb6, Note::C7 } , {"no"}},
         {  {Note::Bb4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {"no"}},
-
+        {  {Note::F5, Note::G5, Note::D6, Note::G6, Note::C7, Note::D7, Note::C5, Note::D5, Note::A5, Note::D6, Note::G6, Note::A6, Note::Eb5, Note::F5, Note::C6, Note::F6, Note::Bb6, Note::C7, Note::Bb4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {"no", "no", "no", "no"}},
     };
 
     int nb_fails = 0;
@@ -730,7 +734,7 @@ int test_audio_detection() {
 
         auto file = fs::path(audio_file);
         std::string result;
-        audio_detection(DICTIONARY_EN, file, 50, result);
+        audio_detection(DICTIONARY_EN, file, 25, result);
         CHECK(result == expected);
         nb_fails += (expected != result);
     }

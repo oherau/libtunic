@@ -236,7 +236,7 @@ bool Dictionary::generate_images(const fs::path& image_dir, std::string extensio
 
         cv::Mat image;
         auto rune_size =RUNE_DEFAULT_SIZE;
-        int tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height;
+        auto tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height;
         word.generate_image(rune_size, tickness, image);
 
 		// for debugging purposes, display the image

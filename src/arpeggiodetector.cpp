@@ -6,7 +6,7 @@
 using Complex = std::complex<double>;
 
 void FFT::fft(std::vector<Complex>& a) {
-    int n = a.size();
+    auto n = a.size();
     if (n <= 1) return;
 
     std::vector<Complex> a0(n / 2), a1(n / 2);
@@ -138,12 +138,13 @@ bool ArpeggioDetector::load_dictionary(const Dictionary& dictionary)
     return true;
 }
 
+// cleanup note sequence and remove dupe sequence of identical notes, silences and unknown notes
 std::vector<Note> ArpeggioDetector::get_clean_sequence(const std::vector<Note>& sequence) {
     std::vector<Note> cleanSeq;
     Note lastNote = Note::SILENCE;
 
     for (const auto& note : sequence) {
-        if (note != lastNote) {
+        if (note != lastNote && note != Note::SILENCE && note != Note::UNKNOWN) {
             cleanSeq.push_back(note);
             lastNote = note;
         }
@@ -175,7 +176,7 @@ Note ArpeggioDetector::findClosestNote(double frequency) {
     return Note::UNKNOWN;
 }
 
-void ArpeggioDetector::detectNoteSequence(const std::vector<float>& samples, uint32_t sampleRate, std::vector<Note>& detected_sequence, double note_length) {
+void ArpeggioDetector::detect_note_sequence(const std::vector<float>& samples, uint32_t sampleRate, std::vector<Note>& detected_sequence, double note_length) {
     const double chunk_duration_s = note_length / 1000.0; // 100 ms
     const size_t samples_per_chunk = static_cast<size_t>(sampleRate * chunk_duration_s);
     // Determine FFT size (next power of 2 for best efficiency)
@@ -223,16 +224,16 @@ void ArpeggioDetector::detectNoteSequence(const std::vector<float>& samples, uin
     }
 }
 
-void ArpeggioDetector::processFile(const std::filesystem::path& filePath, std::vector<Note>& detected_sequence, double note_length) {
+std::vector<Note> ArpeggioDetector::detect_note_sequence(const std::filesystem::path& filePath, double note_length) {
     if (!std::filesystem::exists(filePath)) {
         std::cerr << "Erreur : Le fichier '" << filePath << "' n'existe pas." << std::endl;
-        return;
+        return std::vector<Note>();
     }
 
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Error : Impossible to open file." << std::endl;
-        return;
+        return std::vector<Note>();
     }
 
     WavHeader header;
@@ -241,11 +242,11 @@ void ArpeggioDetector::processFile(const std::filesystem::path& filePath, std::v
     // Validation simple
     if (std::string(header.riff, 4) != "RIFF" || std::string(header.wave, 4) != "WAVE") {
         std::cerr << "Error: Invalid or unsupported file (RIFF/WAVE header is missing)." << std::endl;
-        return;
+        return std::vector<Note>();
     }
     if (header.format_type != 1) { // 1 = PCM
         std::cerr << "Error: Only unco;pressed WAV PCM  are supported." << std::endl;
-        return;
+        return std::vector<Note>();
     }
 
     std::cout << "File opened : " << filePath << "\n"
@@ -265,8 +266,83 @@ void ArpeggioDetector::processFile(const std::filesystem::path& filePath, std::v
         }
     }
 
-    detectNoteSequence(audio_samples, header.sample_rate, detected_sequence, note_length);
+    std::vector<Note> detected_sequence;
+    detect_note_sequence(audio_samples, header.sample_rate, detected_sequence, note_length);
+    return detected_sequence;
 }
+
+//std::vector<Note> ArpeggioDetector::detect_note_sequence_aubio(const fs::path& wavFilePath, float threshold, int minNote, int maxNote)
+//{
+//    std::vector<Note> midiNotes;
+//
+//    // Check if file exists (basic check)
+//    std::ifstream file(wavFilePath);
+//    if (!file.good()) {
+//        std::cerr << "Error: WAV file not found at " << wavFilePath << std::endl;
+//        return midiNotes;
+//    }
+//
+//    // Aubio parameters
+//    uint_t samplerate = 0; // Will be read from the file
+//    uint_t win_s = 1024;   // Window size
+//    uint_t hop_s = 512;    // Hop size (how much to advance per analysis frame)
+//
+//    // Create Aubio source (file reader)
+//    aubio_source_t* src = new_aubio_source(wavFilePath.string().c_str(), samplerate, hop_s);
+//    if (!src) {
+//        std::cerr << "Error: Could not create Aubio source for " << wavFilePath << std::endl;
+//        return midiNotes;
+//    }
+//    samplerate = aubio_source_get_samplerate(src);
+//    std::cout << "Detected samplerate: " << samplerate << " Hz" << std::endl;
+//
+//    // Create Aubio pitch detector (YIN algorithm recommended for monophonic)
+//    aubio_pitch_t* pitch = new_aubio_pitch("yin", win_s, hop_s, samplerate);
+//    if (!pitch) {
+//        std::cerr << "Error: Could not create Aubio pitch detector." << std::endl;
+//        del_aubio_source(src);
+//        return midiNotes;
+//    }
+//
+//    // Set pitch detection parameters
+//    aubio_pitch_set_unit(pitch, "midi"); // Output MIDI note directly from Aubio
+//    aubio_pitch_set_tolerance(pitch, 0.2f); // Tolerance for pitch detection
+//    aubio_pitch_set_silence(pitch, -90.0f); // dB value below which to consider silence
+//
+//    // Aubio buffers
+//    fvec_t* input_buffer = new_fvec(hop_s);
+//    fvec_t* output_buffer = new_fvec(1); // For pitch output
+//
+//    uint_t read = 0;
+//    do {
+//        // Read audio data
+//        aubio_source_do(src, input_buffer, &read);
+//
+//        // Perform pitch detection
+//        aubio_pitch_do(pitch, input_buffer, output_buffer);
+//
+//        float midi_note_float = output_buffer->data[0];
+//        float pitch_confidence = aubio_pitch_get_confidence(pitch);
+//
+//        // Process the detected pitch
+//        if (midi_note_float > 0 && pitch_confidence > threshold) {
+//            int midi_note_int = static_cast<int>(std::round(midi_note_float));
+//            // Optional: Filter by a desired note range
+//            if (midi_note_int >= minNote && midi_note_int <= maxNote) {
+//                midiNotes.push_back((Note)midi_note_int);
+//            }
+//        }
+//    } while (read == hop_s); // Continue until end of file
+//
+//    // Clean up Aubio objects
+//    del_fvec(input_buffer);
+//    del_fvec(output_buffer);
+//    del_aubio_pitch(pitch);
+//    del_aubio_source(src);
+//    aubio_cleanup(); // Important for Aubio to release resources
+//
+//    return midiNotes;
+//}
 
 
 // Function to get the indexed note sequence from a deque of notes

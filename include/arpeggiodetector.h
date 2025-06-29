@@ -93,7 +93,8 @@ class ArpeggioDetector {
 public:
     ArpeggioDetector() =  default;
     bool load_dictionary(const Dictionary& dictionary);
-    void processFile(const std::filesystem::path& filePath, std::vector<Note>& detected_sequence, double note_length = DEFAULT_NOTE_LENGTH);
+    std::vector<Note> detect_note_sequence(const std::filesystem::path& filePath, double note_length = DEFAULT_NOTE_LENGTH);
+    //std::vector<Note> detect_note_sequence_aubio(const fs::path& wavFilePath, float threshold = 0.7f, int minNote = (int)Note::C0, int maxNote = (int)Note::B8);
     std::vector<Note> get_clean_sequence(const std::vector<Note>& sequence);
     Word find(const Arpeggio& arpeggio);
 	//std::vector<Rune> get_runes_from_arpeggio(const Arpeggio& arpeggio);
@@ -101,7 +102,7 @@ public:
     bool detect_words(const std::vector<Note>& notes, std::vector<Word>& words);
 private:
     Note findClosestNote(double frequency);
-    void detectNoteSequence(const std::vector<float>& samples, uint32_t sampleRate, std::vector<Note>& detected_sequence, double note_length = DEFAULT_NOTE_LENGTH);
+    void detect_note_sequence(const std::vector<float>& samples, uint32_t sampleRate, std::vector<Note>& detected_sequence, double note_length = DEFAULT_NOTE_LENGTH);
     std::map<std::string, Arpeggio> m_arpeggio_dictionary;
     int m_arpeggio_min_length = INT_MAX;
 	int m_arpeggio_max_length = 0;
