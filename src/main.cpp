@@ -218,6 +218,7 @@ int test() {
 	//test_audio();
     //test_audio_detection();
     //test_audio_detect_words();
+    test_audio_detect_words();
     test_audio_get_indexed_note_sequence();
     //test_dictionary_image_gen();
     //test_image_detect_words();
@@ -594,6 +595,16 @@ int test_arpeggio_sequence() {
     return nb_fails;
 }
 
+
+int get_index_sequence_diff(const std::vector<int>& s1, const std::vector<int>& s2) {
+
+    int result = -1;
+    for (int i = 0; i < s1.size() && i < s2.size(); i++) {
+        result += std::abs(s1[i] - s2[i]);
+    }
+    return result;
+}
+
 int test_audio_get_indexed_note_sequence() {
     std::cout << std::endl << std::endl;
     std::cout << "===============================================" << std::endl;
@@ -610,8 +621,8 @@ int test_audio_get_indexed_note_sequence() {
     const std::vector< std::pair<std::vector<Note>, std::vector<int>> > test_set_001 = {
         { {Note::F5, Note::G5, Note::D6, Note::G6, Note::C7, Note::D7 } , {1, 2, 6, 9, 12, 13}},
         { {Note::C5, Note::D5, Note::A5, Note::D6, Note::G6, Note::A6 } , {1, 2, 6, 9, 12, 13}},
-        { {Note::E_FLAT5, Note::F5, Note::C6, Note::F6, Note::B_FLAT6, Note::C7 } , {1, 2, 6, 9, 12, 13}},
-        { {Note::B_FLAT4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {1, 2, 6, 9, 12, 13}},
+        { {Note::Eb5, Note::F5, Note::C6, Note::F6, Note::Bb6, Note::C7 } , {1, 2, 6, 9, 12, 13}},
+        { {Note::Bb4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {1, 2, 6, 9, 12, 13}},
 
     };
 
@@ -621,16 +632,25 @@ int test_audio_get_indexed_note_sequence() {
         auto expected = test.second;
 
         int scale = 0;
-        std::vector<int> indexed_sequence;
+        std::vector<int> indexed_sequence, best_seq;
+        int min_diff = INT_MAX;
+        int best_scale = -1;
         for (scale = static_cast<int>(ScaleType::Major); scale <= static_cast<int>(ScaleType::Chromatic); ++scale) {
             indexed_sequence = ArpeggioDetector::get_indexed_note_sequence(note_sequence, (ScaleType)scale);
+
+            auto diff = get_index_sequence_diff(indexed_sequence, expected);
+            if (diff < min_diff) {
+                min_diff = diff;
+                best_scale = scale;
+                best_seq = indexed_sequence;
+            }
+
             if (indexed_sequence == expected)
                 break;
         }
-        CHECK(indexed_sequence == expected);
+        CHECK(best_seq == expected);
 
-        if (scale <= (int)ScaleType::Chromatic)
-            std::cout << "Scale used:" << scale << std::endl;
+        std::cout << "Scale used:" << (int)best_scale << std::endl;
         std::cout << "expected:         ";
         for (auto x : expected) std::cout << x << " ";
         std::cout << std::endl;
@@ -661,10 +681,10 @@ int test_audio_detect_words() {
 
     // test set from the documentation
     const std::vector< std::pair<std::vector<Note>, std::vector<std::string>> > test_set_001 = {
-        { {Note::F5, Note::G5, Note::D6, Note::G6, Note::C7, Note::D7 } , {"no"}},
-        { {Note::C5, Note::D5, Note::A5, Note::D6, Note::G6, Note::A6 } , {"no"}},
-        { {Note::E_FLAT5, Note::F5, Note::C6, Note::F6, Note::B_FLAT6, Note::C7 } , {"no"}},
-        { {Note::B_FLAT4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {"no"}},
+        {  {Note::F5, Note::G5, Note::D6, Note::G6, Note::C7, Note::D7 } , {"no"}},
+        {  {Note::C5, Note::D5, Note::A5, Note::D6, Note::G6, Note::A6 } , {"no"}},
+        {  {Note::Eb5, Note::F5, Note::C6, Note::F6, Note::Bb6, Note::C7 } , {"no"}},
+        {  {Note::Bb4, Note::C5, Note::G5, Note::C6, Note::F6, Note::G6 } , {"no"}},
 
     };
 

@@ -14,15 +14,15 @@
 enum class Note {
     UNKNOWN,
     SILENCE,
-    C0=12, D_FLAT0, D0, E_FLAT0, E0, F0, G_FLAT0, G0, A_FLAT0, A0, B_FLAT0, B0,
-    C1, D_FLAT1, D1, E_FLAT1, E1, F1, G_FLAT1, G1, A_FLAT1, A1, B_FLAT1, B1,
-    C2, D_FLAT2, D2, E_FLAT2, E2, F2, G_FLAT2, G2, A_FLAT2, A2, B_FLAT2, B2,
-    C3, D_FLAT3, D3, E_FLAT3, E3, F3, G_FLAT3, G3, A_FLAT3, A3, B_FLAT3, B3,
-    C4, D_FLAT4, D4, E_FLAT4, E4, F4, G_FLAT4, G4, A_FLAT4, A4, B_FLAT4, B4,
-    C5, D_FLAT5, D5, E_FLAT5, E5, F5, G_FLAT5, G5, A_FLAT5, A5, B_FLAT5, B5,
-    C6, D_FLAT6, D6, E_FLAT6, E6, F6, G_FLAT6, G6, A_FLAT6, A6, B_FLAT6, B6,
-    C7, D_FLAT7, D7, E_FLAT7, E7, F7, G_FLAT7, G7, A_FLAT7, A7, B_FLAT7, B7,
-    C8, D_FLAT8, D8, E_FLAT8, E8, F8, G_FLAT8, G8, A_FLAT8, A8, B_FLAT8, B8,
+    C0=12, Db0, D0, Eb0, E0, F0, Gb0, G0, Ab0, A0, Bb0, B0,
+    C1, Db1, D1, Eb1, E1, F1, Gb1, G1, Ab1, A1, Bb1, B1,
+    C2, Db2, D2, Eb2, E2, F2, Gb2, G2, Ab2, A2, Bb2, B2,
+    C3, Db3, D3, Eb3, E3, F3, Gb3, G3, Ab3, A3, Bb3, B3,
+    C4, Db4, D4, Eb4, E4, F4, Gb4, G4, Ab4, A4, Bb4, B4,
+    C5, Db5, D5, Eb5, E5, F5, Gb5, G5, Ab5, A5, Bb5, B5,
+    C6, Db6, D6, Eb6, E6, F6, Gb6, G6, Ab6, A6, Bb6, B6,
+    C7, Db7, D7, Eb7, E7, F7, Gb7, G7, Ab7, A7, Bb7, B7,
+    C8, Db8, D8, Eb8, E8, F8, Gb8, G8, Ab8, A8, Bb8, B8,
 };
 
 
@@ -96,6 +96,8 @@ std::vector<ScaleRelativeIndex> convert_to_scale_relative_indices(
 // --- Utility for printing (for demonstration) ---
 template <typename T>
 void print_vector(const std::vector<T>& vec, const std::string& label = "");
+
+void convertFlatsToNaturals(std::vector<Note>& notes);
 
 
 #endif // __NOTE_H__

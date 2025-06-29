@@ -34,64 +34,64 @@ std::string note_to_string(Note note, bool no_octave) {
 
         // Only keep fundamentals and flat notations
         // Octave 0
-        {Note::C0, "C0"}, {Note::D_FLAT0, "Db0"}, {Note::D0, "D0"}, {Note::E_FLAT0, "Eb0"},
-        {Note::E0, "E0"}, {Note::F0, "F0"}, {Note::G_FLAT0, "Gb0"}, {Note::G0, "G0"},
-        {Note::A_FLAT0, "Ab0"}, {Note::A0, "A0"}, {Note::B_FLAT0, "Bb0"}, {Note::B0, "B0"},
+        {Note::C0, "C0"}, {Note::Db0, "Db0"}, {Note::D0, "D0"}, {Note::Eb0, "Eb0"},
+        {Note::E0, "E0"}, {Note::F0, "F0"}, {Note::Gb0, "Gb0"}, {Note::G0, "G0"},
+        {Note::Ab0, "Ab0"}, {Note::A0, "A0"}, {Note::Bb0, "Bb0"}, {Note::B0, "B0"},
         // Octave 1
-        {Note::C1, "C1"}, {Note::D_FLAT1, "Db1"}, {Note::D1, "D1"}, {Note::E_FLAT1, "Eb1"},
-        {Note::E1, "E1"}, {Note::F1, "F1"}, {Note::G_FLAT1, "Gb1"}, {Note::G1, "G1"},
-        {Note::A_FLAT1, "Ab1"}, {Note::A1, "A1"}, {Note::B_FLAT1, "Bb1"}, {Note::B1, "B1"},
+        {Note::C1, "C1"}, {Note::Db1, "Db1"}, {Note::D1, "D1"}, {Note::Eb1, "Eb1"},
+        {Note::E1, "E1"}, {Note::F1, "F1"}, {Note::Gb1, "Gb1"}, {Note::G1, "G1"},
+        {Note::Ab1, "Ab1"}, {Note::A1, "A1"}, {Note::Bb1, "Bb1"}, {Note::B1, "B1"},
         // Octave 2
-        {Note::C2, "C2"}, {Note::D_FLAT2, "Db2"}, {Note::D2, "D2"}, {Note::E_FLAT2, "Eb2"},
-        {Note::E2, "E2"}, {Note::F2, "F2"}, {Note::G_FLAT2, "Gb2"}, {Note::G2, "G2"},
-        {Note::A_FLAT2, "Ab2"}, {Note::A2, "A2"}, {Note::B_FLAT2, "Bb2"}, {Note::B2, "B2"},
+        {Note::C2, "C2"}, {Note::Db2, "Db2"}, {Note::D2, "D2"}, {Note::Eb2, "Eb2"},
+        {Note::E2, "E2"}, {Note::F2, "F2"}, {Note::Gb2, "Gb2"}, {Note::G2, "G2"},
+        {Note::Ab2, "Ab2"}, {Note::A2, "A2"}, {Note::Bb2, "Bb2"}, {Note::B2, "B2"},
         // Octave 3
-        {Note::C3, "C3"}, {Note::D_FLAT3, "Db3"}, {Note::D3, "D3"}, {Note::E_FLAT3, "Eb3"},
-        {Note::E3, "E3"}, {Note::F3, "F3"}, {Note::G_FLAT3, "Gb3"}, {Note::G3, "G3"},
-        {Note::A_FLAT3, "Ab3"}, {Note::A3, "A3"}, {Note::B_FLAT3, "Bb3"}, {Note::B3, "B3"},
+        {Note::C3, "C3"}, {Note::Db3, "Db3"}, {Note::D3, "D3"}, {Note::Eb3, "Eb3"},
+        {Note::E3, "E3"}, {Note::F3, "F3"}, {Note::Gb3, "Gb3"}, {Note::G3, "G3"},
+        {Note::Ab3, "Ab3"}, {Note::A3, "A3"}, {Note::Bb3, "Bb3"}, {Note::B3, "B3"},
         // Octave 4
-        {Note::C4, "C4"}, {Note::D_FLAT4, "Db4"}, {Note::D4, "D4"}, {Note::E_FLAT4, "Eb4"},
-        {Note::E4, "E4"}, {Note::F4, "F4"}, {Note::G_FLAT4, "Gb4"}, {Note::G4, "G4"},
-        {Note::A_FLAT4, "Ab4"}, {Note::A4, "A4"}, {Note::B_FLAT4, "Bb4"}, {Note::B4, "B4"},
+        {Note::C4, "C4"}, {Note::Db4, "Db4"}, {Note::D4, "D4"}, {Note::Eb4, "Eb4"},
+        {Note::E4, "E4"}, {Note::F4, "F4"}, {Note::Gb4, "Gb4"}, {Note::G4, "G4"},
+        {Note::Ab4, "Ab4"}, {Note::A4, "A4"}, {Note::Bb4, "Bb4"}, {Note::B4, "B4"},
         // Octave 5
-        {Note::C5, "C5"}, {Note::D_FLAT5, "Db5"}, {Note::D5, "D5"}, {Note::E_FLAT5, "Eb5"},
-        {Note::E5, "E5"}, {Note::F5, "F5"}, {Note::G_FLAT5, "Gb5"}, {Note::G5, "G5"},
-        {Note::A_FLAT5, "Ab5"}, {Note::A5, "A5"}, {Note::B_FLAT5, "Bb5"}, {Note::B5, "B5"},
+        {Note::C5, "C5"}, {Note::Db5, "Db5"}, {Note::D5, "D5"}, {Note::Eb5, "Eb5"},
+        {Note::E5, "E5"}, {Note::F5, "F5"}, {Note::Gb5, "Gb5"}, {Note::G5, "G5"},
+        {Note::Ab5, "Ab5"}, {Note::A5, "A5"}, {Note::Bb5, "Bb5"}, {Note::B5, "B5"},
         // Octave 6
-        {Note::C6, "C6"}, {Note::D_FLAT6, "Db6"}, {Note::D6, "D6"}, {Note::E_FLAT6, "Eb6"},
-        {Note::E6, "E6"}, {Note::F6, "F6"}, {Note::G_FLAT6, "Gb6"}, {Note::G6, "G6"},
-        {Note::A_FLAT6, "Ab6"}, {Note::A6, "A6"}, {Note::B_FLAT6, "Bb6"}, {Note::B6, "B6"},
+        {Note::C6, "C6"}, {Note::Db6, "Db6"}, {Note::D6, "D6"}, {Note::Eb6, "Eb6"},
+        {Note::E6, "E6"}, {Note::F6, "F6"}, {Note::Gb6, "Gb6"}, {Note::G6, "G6"},
+        {Note::Ab6, "Ab6"}, {Note::A6, "A6"}, {Note::Bb6, "Bb6"}, {Note::B6, "B6"},
         // Octave 7
-        {Note::C7, "C7"}, {Note::D_FLAT7, "Db7"}, {Note::D7, "D7"}, {Note::E_FLAT7, "Eb7"},
-        {Note::E7, "E7"}, {Note::F7, "F7"}, {Note::G_FLAT7, "Gb7"}, {Note::G7, "G7"},
-        {Note::A_FLAT7, "Ab7"}, {Note::A7, "A7"}, {Note::B_FLAT7, "Bb7"}, {Note::B7, "B7"},
+        {Note::C7, "C7"}, {Note::Db7, "Db7"}, {Note::D7, "D7"}, {Note::Eb7, "Eb7"},
+        {Note::E7, "E7"}, {Note::F7, "F7"}, {Note::Gb7, "Gb7"}, {Note::G7, "G7"},
+        {Note::Ab7, "Ab7"}, {Note::A7, "A7"}, {Note::Bb7, "Bb7"}, {Note::B7, "B7"},
         // Octave 8
-        {Note::C8, "C8"}, {Note::D_FLAT8, "Db8"}, {Note::D8, "D8"}, {Note::E_FLAT8, "Eb8"},
-        {Note::E8, "E8"}, {Note::F8, "F8"}, {Note::G_FLAT8, "Gb8"}, {Note::G8, "G8"},
-        {Note::A_FLAT8, "Ab8"}, {Note::A8, "A8"}, {Note::B_FLAT8, "Bb8"}, {Note::B8, "B8"}
+        {Note::C8, "C8"}, {Note::Db8, "Db8"}, {Note::D8, "D8"}, {Note::Eb8, "Eb8"},
+        {Note::E8, "E8"}, {Note::F8, "F8"}, {Note::Gb8, "Gb8"}, {Note::G8, "G8"},
+        {Note::Ab8, "Ab8"}, {Note::A8, "A8"}, {Note::Bb8, "Bb8"}, {Note::B8, "B8"}
     };
 
     static const std::map<Note, std::string> note_to_string_map_simplified = {
         {Note::UNKNOWN, "UNKNOWN"},
         {Note::SILENCE, "SILENCE"},
-        {Note::C0, "C"}, {Note::D_FLAT0, "D"}, {Note::D0, "D"}, {Note::E_FLAT0, "E"},
-        {Note::E0, "E"}, {Note::F0, "F"}, {Note::G_FLAT0, "G"}, {Note::G0, "G"},
-        {Note::A_FLAT0, "A"}, {Note::A0, "A"}, {Note::B_FLAT0, "B"}, {Note::B0, "B"},
-        {Note::C1, "C"}, {Note::D_FLAT1, "D"}, {Note::D1, "D"}, {Note::E_FLAT1, "E"},
-        {Note::E1, "E"}, {Note::F1, "F"}, {Note::G_FLAT1, "G"}, {Note::G1, "G"},
-        {Note::A_FLAT1, "A"}, {Note::A1, "A"}, {Note::B_FLAT1, "B"}, {Note::B1, "B"},
-        {Note::C2, "C"}, {Note::D_FLAT2, "D"}, {Note::D2, "D"}, {Note::E_FLAT2, "E"},
-        {Note::E2, "E"}, {Note::F2, "F"}, {Note::G_FLAT2, "G"}, {Note::G2, "G"},
-        {Note::A_FLAT2, "A"}, {Note::A2, "A"}, {Note::B_FLAT2, "B"}, {Note::B2, "B"},
-        {Note::C3, "C"}, {Note::D_FLAT3, "D"}, {Note::D3, "D"}, {Note::E_FLAT3, "E"},
-        {Note::E3, "E"}, {Note::F3, "F"}, {Note::G_FLAT3, "G"}, {Note::G3, "G"},
-        {Note::A_FLAT3, "A"}, {Note::A3, "A"}, {Note::B_FLAT3, "B"}, {Note::B3, "B"},
-        {Note::C4, "C"}, {Note::D_FLAT4, "D"}, {Note::D4, "D"}, {Note::E_FLAT4, "E"},
-        {Note::E4, "E"}, {Note::F4, "F"}, {Note::G_FLAT4, "G"}, {Note::G4, "G"},
-        {Note::A_FLAT4, "A"}, {Note::A4, "A"}, {Note::B_FLAT4, "B"}, {Note::B4, "B"},
-        {Note::C5, "C"}, {Note::D_FLAT5, "D"}, {Note::D5, "D"}, {Note::E_FLAT5, "E"},
-        {Note::E5, "E"}, {Note::F5, "F"}, {Note::G_FLAT5, "G"}, {Note::G5, "G"},
-        {Note::A_FLAT5, "A"}, {Note::A5, "A"}, {Note::B_FLAT5, "B"}, {Note::B5, "B"}
+        {Note::C0, "C"}, {Note::Db0, "D"}, {Note::D0, "D"}, {Note::Eb0, "E"},
+        {Note::E0, "E"}, {Note::F0, "F"}, {Note::Gb0, "G"}, {Note::G0, "G"},
+        {Note::Ab0, "A"}, {Note::A0, "A"}, {Note::Bb0, "B"}, {Note::B0, "B"},
+        {Note::C1, "C"}, {Note::Db1, "D"}, {Note::D1, "D"}, {Note::Eb1, "E"},
+        {Note::E1, "E"}, {Note::F1, "F"}, {Note::Gb1, "G"}, {Note::G1, "G"},
+        {Note::Ab1, "A"}, {Note::A1, "A"}, {Note::Bb1, "B"}, {Note::B1, "B"},
+        {Note::C2, "C"}, {Note::Db2, "D"}, {Note::D2, "D"}, {Note::Eb2, "E"},
+        {Note::E2, "E"}, {Note::F2, "F"}, {Note::Gb2, "G"}, {Note::G2, "G"},
+        {Note::Ab2, "A"}, {Note::A2, "A"}, {Note::Bb2, "B"}, {Note::B2, "B"},
+        {Note::C3, "C"}, {Note::Db3, "D"}, {Note::D3, "D"}, {Note::Eb3, "E"},
+        {Note::E3, "E"}, {Note::F3, "F"}, {Note::Gb3, "G"}, {Note::G3, "G"},
+        {Note::Ab3, "A"}, {Note::A3, "A"}, {Note::Bb3, "B"}, {Note::B3, "B"},
+        {Note::C4, "C"}, {Note::Db4, "D"}, {Note::D4, "D"}, {Note::Eb4, "E"},
+        {Note::E4, "E"}, {Note::F4, "F"}, {Note::Gb4, "G"}, {Note::G4, "G"},
+        {Note::Ab4, "A"}, {Note::A4, "A"}, {Note::Bb4, "B"}, {Note::B4, "B"},
+        {Note::C5, "C"}, {Note::Db5, "D"}, {Note::D5, "D"}, {Note::Eb5, "E"},
+        {Note::E5, "E"}, {Note::F5, "F"}, {Note::Gb5, "G"}, {Note::G5, "G"},
+        {Note::Ab5, "A"}, {Note::A5, "A"}, {Note::Bb5, "B"}, {Note::B5, "B"}
     };
 
     const auto& hash_table = no_octave ? note_to_string_map_simplified : note_to_string_map;
