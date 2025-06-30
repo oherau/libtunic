@@ -1,3 +1,0 @@
-[submodule "libs/fftune"]
-	path = libs/fftune
-	url = https://github.com/fftune/fftune.git
