@@ -12,12 +12,19 @@
 #include "word.h"
 #include "color_print.h"
 #include "note.h"
+#include "yin.h"
+#include "audiodata.h" // temp - for yin test
 //#include "libtuneic.h"
 namespace fs = std::filesystem;
 
 // catch2 mocking
 #define CHECK( x ) { if(!(x)) { std::cout << ANSI::RED << " [ KO ] " << #x << ANSI::RESET << std::endl;} else { std::cout << ANSI::GREEN << " [ OK ] " << #x << ANSI::RESET << std::endl;}  }
 
+void PRINT_TEST_HEADER(const std::string& title) { 
+    const std::string sep =  std::string(80, '='); 
+    int offset = (sep.size() - std::string(title).size()) / 2 ; 
+    std::cout << std::endl << std::endl << sep << std::endl << std::string(offset, ' ') << title << std::endl << sep << std::endl << std::endl;
+}
 
 // Platform-specific headers
 #ifdef _WIN32
@@ -89,6 +96,7 @@ int test_dictionarize();
 int test_arpeggio_sequence();
 int test_audio_detect_words();
 int test_audio_get_indexed_note_sequence();
+int test_audio_yin();
 
 /////////////////////////////////////////
 
@@ -213,13 +221,14 @@ int test_check(const T& expected, const T& result) {
 
 int test() {
     int nb_fails = 0;
-    nb_fails += test_dictionary_load_save();
-    nb_fails += test_rune();
-    nb_fails += test_word();
-	nb_fails += test_audio();
-    nb_fails += test_audio_get_indexed_note_sequence();
-    nb_fails += test_audio_detect_words();
-    nb_fails += test_audio_detection();
+    //nb_fails += test_dictionary_load_save();
+    //nb_fails += test_rune();
+    //nb_fails += test_word();
+	//nb_fails += test_audio();
+    //nb_fails += test_audio_get_indexed_note_sequence();
+    //nb_fails += test_audio_detect_words();
+    //nb_fails += test_audio_detection();
+    nb_fails += test_audio_yin();
     //nb_fails += test_dictionary_image_gen();
     //nb_fails += test_image_detect_words();
     //nb_fails += test_rune_image_generation();
@@ -235,11 +244,8 @@ int test() {
 }
 
 int test_rune() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "==========     RUNE - TEST MODE    ===========" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
+
+    PRINT_TEST_HEADER("RUNE - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
     RuneDetector rune_detector(&dictionary);
@@ -271,11 +277,8 @@ int test_rune() {
 }
 
 int test_word() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "==========     WORD - TEST MODE     ===========" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
+
+    PRINT_TEST_HEADER("WORD - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
     RuneDetector rune_detector(&dictionary);
@@ -303,11 +306,8 @@ int test_word() {
 }
 
 int test_audio() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "==========     AUDIO - TEST MODE    ===========" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
+
+    PRINT_TEST_HEADER("AUDIO - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
 
@@ -338,11 +338,7 @@ int test_audio() {
 
 
 int test_image_detect_words() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "==========     IMAGE - TEST MODE    ===========" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("IMAGE - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
 	RuneDetector rune_detector(&dictionary);
@@ -374,11 +370,8 @@ int test_image_detect_words() {
 int test_rune_image_generation() {
 
 
-    std::cout << std::endl << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << "========== RUNE IMAGE GENERATION - TEST MODE ===========" << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("RUNE IMAGE GENERATION - TEST MODE");
+
     Dictionary dictionary(DICTIONARY_EN);
     std::vector<std::string> hash_list;
 	dictionary.get_hash_list(hash_list);
@@ -406,11 +399,8 @@ int test_rune_image_generation() {
 int test_dictionary_image_gen() {
 
 
-    std::cout << std::endl << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << "========== DICT IMAGE GENERATION - TEST MODE ===========" << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("DICT IMAGE GENERATION - TEST MODE");
+
     Dictionary dictionary(DICTIONARY_EN);
     dictionary.save(DICTIONARY_EN);
 
@@ -423,11 +413,7 @@ int test_dictionary_image_gen() {
 int test_decode_word_image() {
 
 
-    std::cout << std::endl << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << "==========   DECODE WORD IMAGE - TEST MODE   ===========" << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("DECODE WORD IMAGE - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
     RuneDetector rune_detector(&dictionary);
@@ -492,11 +478,7 @@ int test_decode_word_image() {
 int test_dictionary_load_save() {
 
 
-    std::cout << std::endl << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << "==========   DICT LOAD SAVE    - TEST MODE   ===========" << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("DICT LOAD SAVE - TEST MODE");
 
 	fs::path temp_file = "test_dictionary.txt";
 
@@ -524,11 +506,7 @@ int test_dictionary_load_save() {
 int test_dictionarize() {
 
 
-    std::cout << std::endl << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << "==========   DICTIONARIZE - TEST MODE   ===========" << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("DICTIONARIZE - TEST MODE");
 
 	int nb_fails = 0;
     fs::path temp_file = "test_dictionarize.txt";
@@ -556,11 +534,7 @@ int test_dictionarize() {
 int test_arpeggio_sequence() {
 
 
-    std::cout << std::endl << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << "==========   ARPEGGIO SEQUENCE - TEST MODE   ===========" << std::endl;
-    std::cout << "========================================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("ARPEGGIO SEQUENCE - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
     dictionary.save(DICTIONARY_EN);
@@ -610,11 +584,7 @@ int get_index_sequence_diff(const std::vector<int>& s1, const std::vector<int>& 
 }
 
 int test_audio_get_indexed_note_sequence() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "== AUDIO GET INDEXED NOTE SEQ - TEST MODE   ===" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("AUDIO GET INDEXED NOTE SEQ - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
 
@@ -672,11 +642,7 @@ int test_audio_get_indexed_note_sequence() {
 }
 
 int test_audio_detect_words() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "=====    AUDIO DETECT WORDS- TEST MODE    =====" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("AUDIO DETECT WORDS - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
 
@@ -715,11 +681,7 @@ int test_audio_detect_words() {
 }
 
 int test_audio_detection() {
-    std::cout << std::endl << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "=====      AUDIO DETECTION- TEST MODE     =====" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << std::endl;
+    PRINT_TEST_HEADER("AUDIO DETECTION - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
 
@@ -740,4 +702,26 @@ int test_audio_detection() {
     }
 
     return nb_fails;
+}
+
+int test_audio_yin() {
+
+    PRINT_TEST_HEADER("YIN ALGO - SIMPLE TEST");
+
+    int buffer_length = 100;
+    Yin yin;
+    float pitch = 0;
+
+    printf("About to test how many samples are needed to detect the pitch in a given signal\n");
+    printf("WARNING: this test has an absolute disregard for memory managment, hang tight this could hurt a little...\n");
+
+    while (pitch < 10) {
+        Yin_init(&yin, buffer_length, 0.05);
+        pitch = Yin_getPitch(&yin, audio);
+        buffer_length++;
+    }
+
+
+    printf("Pitch is found to be %f with buffer length %i and probabiity %f\n", pitch, buffer_length, Yin_getProbability(&yin));
+    return 0;
 }

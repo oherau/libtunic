@@ -150,9 +150,11 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClCompile Include="src\runedetector.cpp" />
     <ClCompile Include="src\toolbox.cpp" />
     <ClCompile Include="src\word.cpp" />
+    <ClCompile Include="src\yin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\arpeggio.h" />
+    <ClInclude Include="include\audioData.h" />
     <ClInclude Include="include\color_print.h" />
     <ClInclude Include="include\dictionary.h" />
     <ClInclude Include="include\note.h" />
@@ -161,6 +163,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClInclude Include="include\runedetector.h" />
     <ClInclude Include="include\toolbox.h" />
     <ClInclude Include="include\word.h" />
+    <ClInclude Include="include\yin.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
