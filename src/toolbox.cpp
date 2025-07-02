@@ -471,7 +471,7 @@ double frequencyToMidiNote(double frequency_hz) {
 	return 12.0 * std::log2(frequency_hz / A4_FREQUENCY) + A4_MIDI_NOTE;
 }
 
-int generate_wav(const std::vector<std::pair<Note, float>>& notes, const fs::path& wav_file) {
+int generate_wav(const std::vector<std::pair<Note, double>>& notes, const fs::path& wav_file) {
 	WaveGenerator generator(44100, 16, 1, 1.0);
 
 	for (const auto& [note, duration] : notes) {

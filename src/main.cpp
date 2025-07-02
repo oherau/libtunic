@@ -246,7 +246,7 @@ int test() {
 
     std::cout << "===============================================" << std::endl;
     
-    CHECK(nb_fails = 0);
+    CHECK(nb_fails == 0);
 
     return 0;
 }
@@ -693,9 +693,10 @@ int test_audio_detection_generated_wav_detect_notes() {
 
     Dictionary dictionary(DICTIONARY_EN);
 
-
-    const std::vector<std::pair<std::vector<std::pair<Note, float>>, std::vector<Note>>> test_set_001 = {
-        {{{Note::C3, 0.5}, {Note::D3, 0.5}, {Note::E3, 0.5}} , {Note::C3, Note::D3, Note::E3}},
+    const double STD_NOTE_DURATION = 0.150;
+    const std::vector<std::vector<Note>> test_set_001 = {
+        {Note::C3, Note::D3, Note::E3},
+        {Note::F5, Note::G5, Note::D6, Note::G6, Note::C7, Note::D7 },
     };
 
     int index = 0;
@@ -703,15 +704,20 @@ int test_audio_detection_generated_wav_detect_notes() {
     for (const auto& test : test_set_001) {
         index++;
         fs::path wav_file = fs::path("data") / fs::path("gen_wav") / fs::path("gen_wav" + std::to_string(index) + ".wav");
-        auto notes_with_durations = test.first;
-        auto expected_note_seq = test.second;
+        std::vector<Note> expected_note_seq = test;
+
+        std::vector<std::pair<Note, double>> notes_with_durations;
+        for (const auto& note : expected_note_seq) {
+            notes_with_durations.push_back(std::pair(note, STD_NOTE_DURATION));
+        }
 
         generate_wav(notes_with_durations, wav_file);
 
         ArpeggioDetector detector;
         auto detected_sequence = detector.detect_note_sequence(wav_file, 0, true);
-
-        CHECK(detected_sequence == expected_note_seq);
+        auto clean_detected_sequence = detector.get_clean_sequence(detected_sequence);
+        std::cout << std::endl;
+        CHECK(clean_detected_sequence == expected_note_seq);
     }
 
     return nb_fails;

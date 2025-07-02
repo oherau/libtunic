@@ -111,6 +111,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opencv_world4110d.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.dll" "$(TargetDir)" /Y /D
@@ -134,6 +135,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetD
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opencv_world4110.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.dll" "$(TargetDir)" /Y /D
@@ -149,6 +151,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClCompile Include="src\rune.cpp" />
     <ClCompile Include="src\runedetector.cpp" />
     <ClCompile Include="src\toolbox.cpp" />
+    <ClCompile Include="src\wavgenerator.cpp" />
     <ClCompile Include="src\word.cpp" />
     <ClCompile Include="src\yin.cpp" />
   </ItemGroup>
@@ -162,6 +165,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDi
     <ClInclude Include="include\rune.h" />
     <ClInclude Include="include\runedetector.h" />
     <ClInclude Include="include\toolbox.h" />
+    <ClInclude Include="include\wavgenerator.h" />
     <ClInclude Include="include\word.h" />
     <ClInclude Include="include\yin.h" />
   </ItemGroup>

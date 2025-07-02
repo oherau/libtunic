@@ -1,4 +1,4 @@
-#include "arpeggiodetector.h"
+﻿#include "arpeggiodetector.h"
 #include <arpeggio.h>
 #include <queue>
 #include <cmath>
@@ -273,15 +273,23 @@ std::vector<Note> ArpeggioDetector::detect_note_sequence(const std::filesystem::
 
     std::vector<Note> detected_sequence;
     if (yin_algo) {
-        int buffer_length = 100;
+
         Yin yin;
-        float pitch = 0;
-        const int window_size = 500;
+
+        // min buffer length => 1/freq * sample rate
+        // ex: C0 => 1/16.35 Hz = 0,0611620795107034 sec => 0.061162 * 44100 = 2 697 samples
+        // ex: A4 => 1/440 Hz = 0,0022727272727273 sec => 100,22 samples
+        const int window_size = 1000;
         int16_t audio_buff[window_size];
 
         printf("About to test how many samples are needed to detect the pitch in a given signal\n");
         printf("WARNING: this test has an absolute disregard for memory managment, hang tight this could hurt a little...\n");
         for (int offset = 0; offset < (audio_samples_int16.size() - window_size); offset += window_size) {
+
+            
+            int buffer_length = 100;
+            float pitch = 0;
+
             std::copy(audio_samples_int16.data() + offset, audio_samples_int16.data() + offset + window_size, audio_buff);
             while (pitch < 10 && buffer_length < window_size) {
                 Yin_init(&yin, buffer_length, 0.05);
@@ -291,12 +299,13 @@ std::vector<Note> ArpeggioDetector::detect_note_sequence(const std::filesystem::
             }
             if (pitch != -1) {
                 //    printf("Pitch is found to be %f with buffer length %i and probabiity %f\n", pitch, buffer_length, Yin_getProbability(&yin));
+                //auto proba = Yin_getProbability(&yin); // TODO: maybe we should filter with proba > 90%
                 Note note = (Note)frequencyToMidiNote(pitch);
                 detected_sequence.push_back(note);
                 std::cout << note_to_string(note) << " ";
             }
             else {
-                std::cout << "pitch not found" << std::endl;
+                //std::cout << "pitch not found" << std::endl;
             }
 
         }
