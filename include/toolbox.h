@@ -6,6 +6,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/core/types.hpp>
 #include <filesystem>
+#include "note.h"
 namespace fs = std::filesystem;
 
 const int RUNE_IMAGE_BINARY_FILTER_THRESOLD = 128; // Threshold for binary filter on rune images
@@ -22,5 +23,11 @@ cv::Mat applyClosing(const cv::Mat& input_image, int kernel_size, int iterations
 
 std::vector<std::string> loadLinesFromFile(const fs::path& file);
 bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition);
+
+double frequencyToMidiNote(double frequency_hz);
+
+//int generate_test_wav(const fs::path& wav_file);
+int generate_wav(const std::vector<std::pair<Note, float>>& notes, const fs::path& wav_file);
+
 
 #endif // __TOOLBOX_H__

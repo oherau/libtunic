@@ -3,6 +3,8 @@
 #include <queue>
 #include <cmath>
 #include <algorithm>
+#include <yin.h>
+#include <toolbox.h>
 using Complex = std::complex<double>;
 
 void FFT::fft(std::vector<Complex>& a) {
@@ -159,7 +161,7 @@ Note ArpeggioDetector::findClosestNote(double frequency) {
     double min_dist = std::numeric_limits<double>::max();
     Note best_match = Note::UNKNOWN;
 
-    for (const auto& note : target_notes) {
+    for (const auto& note : note_frequencies) {
         double dist = std::abs(note.second - frequency);
         if (dist < min_dist) {
             min_dist = dist;
@@ -224,7 +226,7 @@ void ArpeggioDetector::detect_note_sequence(const std::vector<float>& samples, u
     }
 }
 
-std::vector<Note> ArpeggioDetector::detect_note_sequence(const std::filesystem::path& filePath, double note_length) {
+std::vector<Note> ArpeggioDetector::detect_note_sequence(const std::filesystem::path& filePath, double note_length, bool yin_algo) {
     if (!std::filesystem::exists(filePath)) {
         std::cerr << "Erreur : Le fichier '" << filePath << "' n'existe pas." << std::endl;
         return std::vector<Note>();
@@ -245,7 +247,7 @@ std::vector<Note> ArpeggioDetector::detect_note_sequence(const std::filesystem::
         return std::vector<Note>();
     }
     if (header.format_type != 1) { // 1 = PCM
-        std::cerr << "Error: Only unco;pressed WAV PCM  are supported." << std::endl;
+        std::cerr << "Error: Only uncompressed WAV PCM are supported." << std::endl;
         return std::vector<Note>();
     }
 
@@ -256,18 +258,53 @@ std::vector<Note> ArpeggioDetector::detect_note_sequence(const std::filesystem::
 
     // Reading audio data
     std::vector<float> audio_samples;
+    std::vector<int16_t> audio_samples_int16;
     int16_t sample16;
     while (file.read(reinterpret_cast<char*>(&sample16), sizeof(int16_t))) {
         // Conversion in nor;alized float [-1.0, 1.0]
         audio_samples.push_back(static_cast<float>(sample16) / 32768.0f);
+        audio_samples_int16.push_back(sample16);
         // If stereo, the second channel is ignored
         if (header.channels == 2) {
             file.seekg(sizeof(int16_t), std::ios_base::cur);
         }
     }
 
+
     std::vector<Note> detected_sequence;
-    detect_note_sequence(audio_samples, header.sample_rate, detected_sequence, note_length);
+    if (yin_algo) {
+        int buffer_length = 100;
+        Yin yin;
+        float pitch = 0;
+        const int window_size = 500;
+        int16_t audio_buff[window_size];
+
+        printf("About to test how many samples are needed to detect the pitch in a given signal\n");
+        printf("WARNING: this test has an absolute disregard for memory managment, hang tight this could hurt a little...\n");
+        for (int offset = 0; offset < (audio_samples_int16.size() - window_size); offset += window_size) {
+            std::copy(audio_samples_int16.data() + offset, audio_samples_int16.data() + offset + window_size, audio_buff);
+            while (pitch < 10 && buffer_length < window_size) {
+                Yin_init(&yin, buffer_length, 0.05);
+                pitch = Yin_getPitch(&yin, audio_buff);
+                buffer_length++;
+                //std::cout << "buffer_length" << buffer_length << std::endl;
+            }
+            if (pitch != -1) {
+                //    printf("Pitch is found to be %f with buffer length %i and probabiity %f\n", pitch, buffer_length, Yin_getProbability(&yin));
+                Note note = (Note)frequencyToMidiNote(pitch);
+                detected_sequence.push_back(note);
+                std::cout << note_to_string(note) << " ";
+            }
+            else {
+                std::cout << "pitch not found" << std::endl;
+            }
+
+        }
+    }
+    else {
+        detect_note_sequence(audio_samples, header.sample_rate, detected_sequence, note_length);
+    }
+
     return detected_sequence;
 }
 

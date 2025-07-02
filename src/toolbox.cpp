@@ -1,7 +1,19 @@
 #include "toolbox.h"
+#include "wavgenerator.h"
 #include <iostream>
 #include <fstream>
 #include <opencv2/imgproc.hpp>
+#include <vector>
+#include <cmath>   // For sin and M_PI
+#include <numeric> // For std::iota (C++11+)
+#include <map>     // For std::map
+#include <string>  // For std::string in main's debug output
+#include <cstdint> // For uint16_t, uint32_t, int16_t etc.
+
+// Define PI if not available (M_PI is a common GNU extension)
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 bool find_horizontal_separator(const cv::Mat& binary_image, int& line_center_y, int& separator_tickness)
 {
@@ -66,13 +78,13 @@ bool find_horizontal_separator(const cv::Mat& binary_image, int& line_center_y, 
 
 
 		// if ticknckness is greater than 20% of the image height, it is probably not a separator line
-		if(separator_tickness > (0.2* binary_image.rows))
+		if (separator_tickness > (0.2 * binary_image.rows))
 		{
 			return false;
 		}
 
 		// if line center is not in the middle of the image, it is probably not a separator line
-		if(line_center_y < (0.3 * binary_image.rows) || line_center_y > (0.7 * binary_image.rows))
+		if (line_center_y < (0.3 * binary_image.rows) || line_center_y >(0.7 * binary_image.rows))
 		{
 			return false;
 		}
@@ -135,7 +147,7 @@ bool crop_borders(const cv::Mat& image, int line_center_y, int line_center_x_min
 }
 
 bool make_white_rune_black_background(cv::Mat& image) {
-		if (image.empty()) {
+	if (image.empty()) {
 		std::cerr << "Error: Input image is empty." << std::endl;
 		return false;
 	}
@@ -150,7 +162,7 @@ bool make_white_rune_black_background(cv::Mat& image) {
 	auto white_pixels = cv::countNonZero(binary_image);
 	auto black_pixels = binary_image.total() - white_pixels;
 
-	if(white_pixels > black_pixels) {
+	if (white_pixels > black_pixels) {
 		// If there are more white pixels than black, apply threshold and invert the image
 		cv::threshold(image, binary_image, RUNE_IMAGE_BINARY_FILTER_THRESOLD, 255, cv::THRESH_BINARY);
 		cv::bitwise_not(binary_image, binary_image);
@@ -169,33 +181,34 @@ bool make_white_rune_black_background(cv::Mat& image) {
 #include <iostream>
 #include <string> // For std::to_string
 #include <rune.h>
+#include <note.h>
 
 // Function to apply Erosion
 // input_image: The source image (should be grayscale or binary for typical use)
 // kernel_size: The size of the structuring element (e.g., 3 for 3x3, 5 for 5x5)
 // iterations: The number of times the erosion operation is applied
 cv::Mat applyErosion(const cv::Mat& input_image, int kernel_size, int iterations) {
-    if (input_image.empty()) {
-        std::cerr << "Error in applyErosion: Input image is empty." << std::endl;
-        return cv::Mat(); // Return an empty Mat
-    }
+	if (input_image.empty()) {
+		std::cerr << "Error in applyErosion: Input image is empty." << std::endl;
+		return cv::Mat(); // Return an empty Mat
+	}
 
-    // Ensure kernel_size is positive and odd for a centered kernel
-    if (kernel_size <= 0) {
-        std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
-        kernel_size = 3;
-    }
-    if (kernel_size % 2 == 0) {
-        std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
-        kernel_size += 1;
-    }
+	// Ensure kernel_size is positive and odd for a centered kernel
+	if (kernel_size <= 0) {
+		std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
+		kernel_size = 3;
+	}
+	if (kernel_size % 2 == 0) {
+		std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
+		kernel_size += 1;
+	}
 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
-        cv::Size(kernel_size, kernel_size),
-        cv::Point(kernel_size / 2, kernel_size / 2));
-    cv::Mat eroded_image;
-    cv::erode(input_image, eroded_image, kernel, cv::Point(-1, -1), iterations);
-    return eroded_image;
+	cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
+		cv::Size(kernel_size, kernel_size),
+		cv::Point(kernel_size / 2, kernel_size / 2));
+	cv::Mat eroded_image;
+	cv::erode(input_image, eroded_image, kernel, cv::Point(-1, -1), iterations);
+	return eroded_image;
 }
 
 // Function to apply Dilation
@@ -203,74 +216,74 @@ cv::Mat applyErosion(const cv::Mat& input_image, int kernel_size, int iterations
 // kernel_size: The size of the structuring element
 // iterations: The number of times the dilation operation is applied
 cv::Mat applyDilation(const cv::Mat& input_image, int kernel_size, int iterations) {
-    if (input_image.empty()) {
-        std::cerr << "Error in applyDilation: Input image is empty." << std::endl;
-        return cv::Mat();
-    }
+	if (input_image.empty()) {
+		std::cerr << "Error in applyDilation: Input image is empty." << std::endl;
+		return cv::Mat();
+	}
 
-    if (kernel_size <= 0) {
-        std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
-        kernel_size = 3;
-    }
-    if (kernel_size % 2 == 0) {
-        std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
-        kernel_size += 1;
-    }
+	if (kernel_size <= 0) {
+		std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
+		kernel_size = 3;
+	}
+	if (kernel_size % 2 == 0) {
+		std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
+		kernel_size += 1;
+	}
 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
-        cv::Size(kernel_size, kernel_size),
-        cv::Point(kernel_size / 2, kernel_size / 2));
-    cv::Mat dilated_image;
-    cv::dilate(input_image, dilated_image, kernel, cv::Point(-1, -1), iterations);
-    return dilated_image;
+	cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
+		cv::Size(kernel_size, kernel_size),
+		cv::Point(kernel_size / 2, kernel_size / 2));
+	cv::Mat dilated_image;
+	cv::dilate(input_image, dilated_image, kernel, cv::Point(-1, -1), iterations);
+	return dilated_image;
 }
 
 // Function to apply Opening (Erosion then Dilation)
 cv::Mat applyOpening(const cv::Mat& input_image, int kernel_size, int iterations) {
-    if (input_image.empty()) {
-        std::cerr << "Error in applyOpening: Input image is empty." << std::endl;
-        return cv::Mat();
-    }
+	if (input_image.empty()) {
+		std::cerr << "Error in applyOpening: Input image is empty." << std::endl;
+		return cv::Mat();
+	}
 
-    if (kernel_size <= 0) {
-        std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
-        kernel_size = 3;
-    }
-    if (kernel_size % 2 == 0) {
-        std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
-        kernel_size += 1;
-    }
+	if (kernel_size <= 0) {
+		std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
+		kernel_size = 3;
+	}
+	if (kernel_size % 2 == 0) {
+		std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
+		kernel_size += 1;
+	}
 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
-        cv::Size(kernel_size, kernel_size),
-        cv::Point(kernel_size / 2, kernel_size / 2));
-    cv::Mat opened_image;
-    cv::morphologyEx(input_image, opened_image, cv::MORPH_OPEN, kernel, cv::Point(-1, -1), iterations);
-    return opened_image;
+	cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
+		cv::Size(kernel_size, kernel_size),
+		cv::Point(kernel_size / 2, kernel_size / 2));
+	cv::Mat opened_image;
+	cv::morphologyEx(input_image, opened_image, cv::MORPH_OPEN, kernel, cv::Point(-1, -1), iterations);
+	return opened_image;
 }
 
 // Function to apply Closing (Dilation then Erosion)
 cv::Mat applyClosing(const cv::Mat& input_image, int kernel_size, int iterations) {
-    if (input_image.empty()) {
-        std::cerr << "Error in applyClosing: Input image is empty." << std::endl;
-        return cv::Mat();
-    }
+	if (input_image.empty()) {
+		std::cerr << "Error in applyClosing: Input image is empty." << std::endl;
+		return cv::Mat();
+	}
 
-    if (kernel_size <= 0) {
-        std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
-        kernel_size = 3;
-    }
-    if (kernel_size % 2 == 0) {
-        std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
-        kernel_size += 1;
-    }
+	if (kernel_size <= 0) {
+		std::cerr << "Warning: kernel_size must be positive. Using 3." << std::endl;
+		kernel_size = 3;
+	}
+	if (kernel_size % 2 == 0) {
+		std::cerr << "Warning: kernel_size should ideally be odd for symmetric kernels. Increasing by 1." << std::endl;
+		kernel_size += 1;
+	}
 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
-        cv::Size(kernel_size, kernel_size),
-        cv::Point(kernel_size / 2, kernel_size / 2));
-    cv::Mat closed_image;
-    cv::morphologyEx(input_image, closed_image, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), iterations);
-    return closed_image;
+	cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,
+		cv::Size(kernel_size, kernel_size),
+		cv::Point(kernel_size / 2, kernel_size / 2));
+	cv::Mat closed_image;
+	cv::morphologyEx(input_image, closed_image, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), iterations);
+	return closed_image;
 }
 
 //
@@ -364,13 +377,15 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 
 	// 1. Convert to grayscale
 	cv::Mat gray_image;
-	if(image.channels() == 3) {
+	if (image.channels() == 3) {
 		// If the image is in color (3 channels), convert it to grayscale
 		cv::cvtColor(image, gray_image, cv::COLOR_BGR2GRAY);
-	} else if(image.channels() == 4) {
+	}
+	else if (image.channels() == 4) {
 		// If the image has an alpha channel (4 channels), convert it to grayscale
 		cv::cvtColor(image, gray_image, cv::COLOR_BGRA2GRAY);
-	} else {
+	}
+	else {
 		// If the image is already grayscale, just use it as is
 		gray_image = image;
 	}
@@ -414,7 +429,7 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 
 		// Check if the approximated polygon has 4 vertices (a rectangle) and is sufficiently large
 		// You might need to adjust the contour area threshold based on your image and expected block sizes
-		if (approx_poly.size() == 4 && cv::isContourConvex(approx_poly) && cv::contourArea(contour) > (RUNE_DEFAULT_SIZE.area()/2.0)) {
+		if (approx_poly.size() == 4 && cv::isContourConvex(approx_poly) && cv::contourArea(contour) > (RUNE_DEFAULT_SIZE.area() / 2.0)) {
 			// Get the bounding rectangle for the current contour
 			cv::Rect bounding_rect = cv::boundingRect(contour);
 
@@ -429,8 +444,8 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 
 			// You can also extract the individual block as a separate image
 			cv::Mat extracted_block = image(bounding_rect);
-			 //cv::imshow("Extracted Block " + std::to_string(block_count), extracted_block); 
-			 //cv::imwrite("extracted_block_" + std::to_string(block_count) + ".jpg", extracted_block); // Save to file
+			//cv::imshow("Extracted Block " + std::to_string(block_count), extracted_block); 
+			//cv::imwrite("extracted_block_" + std::to_string(block_count) + ".jpg", extracted_block); // Save to file
 
 			partition.push_back(extracted_block); // Add the extracted block to the partition vector
 		}
@@ -443,3 +458,73 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 	return true;
 }
 
+double frequencyToMidiNote(double frequency_hz) {
+	if (frequency_hz <= 0.0) {
+		// Frequencies must be positive. Return a sentinel value or throw an error.
+		// MIDI notes are typically 0-127, so -1.0 is a good indicator of invalid input.
+		return -1.0;
+	}
+	const double A4_FREQUENCY = 440.0; // Reference A4 frequency
+	const int A4_MIDI_NOTE = 69;       // MIDI note number for A4
+
+	// Calculate MIDI note number using the formula
+	return 12.0 * std::log2(frequency_hz / A4_FREQUENCY) + A4_MIDI_NOTE;
+}
+
+int generate_wav(const std::vector<std::pair<Note, float>>& notes, const fs::path& wav_file) {
+	WaveGenerator generator(44100, 16, 1, 1.0);
+
+	for (const auto& [note, duration] : notes) {
+		generator.addNote(note, duration);
+	}
+
+	if (generator.save(wav_file.string().c_str())) {
+		std::cout << "Successfully created " << wav_file.stem().string() << std::endl;
+	}
+	else {
+		std::cerr << "Failed to create " << wav_file.stem().string() << std::endl;
+	}
+
+	return 0;
+}
+
+//int generate_test_wav(const fs::path& wav_file) {
+//	WaveGenerator generator;
+//
+//	// Define your sequence of notes and durations using the Note enum
+//	generator.addNote(Note::C5, 0.5); // C5 for 0.5 seconds
+//	generator.addNote(Note::D5, 0.5); // D5 for 0.5 seconds
+//	generator.addNote(Note::E5, 0.5); // E5 for 0.5 seconds
+//	generator.addNote(Note::F5, 0.5); // F5 for 0.5 seconds
+//	generator.addNote(Note::G5, 1.0); // G5 for 1.0 seconds (longer duration)
+//	generator.addNote(Note::A5, 0.25); // A5 for 0.25 seconds (shorter duration)
+//	generator.addNote(Note::SILENCE, 0.25); // Add a short rest
+//	generator.addNote(Note::G5, 0.75); // G5 for 0.75 seconds
+//	generator.addNote(Note::C5, 1.5); // Back to C5 for a longer duration
+//
+//	if (generator.save(wav_file.string().c_str())) {
+//		std::cout << "Successfully created melody_enum.wav" << std::endl;
+//	}
+//	else {
+//		std::cerr << "Failed to create melody_enum.wav" << std::endl;
+//	}
+//
+//	// You can create another one with different notes
+//	WaveGenerator song_generator(44100, 16, 2); // Stereo output
+//	song_generator.addNote(Note::A4, 0.8);
+//	song_generator.addNote(Note::C5, 0.8);
+//	song_generator.addNote(Note::E5, 0.8);
+//	song_generator.addNote(Note::A5, 1.2);
+//	song_generator.addNote(Note::SILENCE, 0.1); // Short rest
+//	song_generator.addNote(Note::G5, 0.5);
+//	song_generator.addNote(Note::C5, 0.5);
+//
+//	if (song_generator.save("my_song_enum.wav")) {
+//		std::cout << "Successfully created my_song_enum.wav (stereo)" << std::endl;
+//	}
+//	else {
+//		std::cerr << "Failed to create my_song_enum.wav" << std::endl;
+//	}
+//
+//	return 0;
+//}

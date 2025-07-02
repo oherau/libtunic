@@ -37,6 +37,8 @@ void PRINT_TEST_HEADER(const std::string& title) {
 #include <limits.h>  // For PATH_MAX
 #endif
 #include <toolbox.h>
+#include <wavgenerator.h>
+#include "toolbox.cpp"
 
 namespace fs = std::filesystem;
 
@@ -97,13 +99,17 @@ int test_arpeggio_sequence();
 int test_audio_detect_words();
 int test_audio_get_indexed_note_sequence();
 int test_audio_yin();
+int test_audio_detection_generated_wav_detect_notes();
+
 
 /////////////////////////////////////////
 
-int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, std::string& result);
+int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, bool yin_algo, std::string& result);
 int image_detection(const fs::path& dictionary_file, const fs::path& image_file);
 
 int main(int argc, char* argv[]) {
+
+    bool yin_algo = true;
 
     std::cerr << "argc: " << argc << "   ";
     // TEST MODE
@@ -129,7 +135,7 @@ int main(int argc, char* argv[]) {
         }
 
 		std::string result;
-        int detection_result = audio_detection(DICTIONARY_EN, fs::path(filename), note_length, result);
+        int detection_result = audio_detection(DICTIONARY_EN, fs::path(filename), note_length, yin_algo, result);
     }
     if (fs::path(filename).extension() == ".jpg") {
         int detection_result = image_detection(RUNES_FOLDER, fs::path(filename));
@@ -163,7 +169,7 @@ int image_detection(const fs::path& dictionary_file, const fs::path& image_file)
 	return -1; // Placeholder for image detection logic
 }
 
-int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, std::string& result) {
+int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, bool yin_algo, std::string& result) {
 
     // DETECTION MODE
     Dictionary dictionary(dictionary_file);
@@ -171,7 +177,7 @@ int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file,
     std::vector<float> audioData;
 
     ArpeggioDetector noteDetector;
-    std::vector<Note> detected_sequence = noteDetector.detect_note_sequence(audio_file, note_length);
+    std::vector<Note> detected_sequence = noteDetector.detect_note_sequence(audio_file, note_length, yin_algo);
     //std::vector<Note> detected_sequence = noteDetector.detect_note_sequence_aubio(audio_file);
 
     // detected sequence
@@ -227,8 +233,10 @@ int test() {
 	//nb_fails += test_audio();
     //nb_fails += test_audio_get_indexed_note_sequence();
     //nb_fails += test_audio_detect_words();
+    //nb_fails += test_audio_yin(); 
     //nb_fails += test_audio_detection();
-    nb_fails += test_audio_yin();
+    nb_fails += test_audio_detection_generated_wav_detect_notes();
+
     //nb_fails += test_dictionary_image_gen();
     //nb_fails += test_image_detect_words();
     //nb_fails += test_rune_image_generation();
@@ -680,6 +688,35 @@ int test_audio_detect_words() {
     return nb_fails;
 }
 
+int test_audio_detection_generated_wav_detect_notes() {
+    PRINT_TEST_HEADER("AUDIO DETECTION - GENERATED WAV- TEST MODE");
+
+    Dictionary dictionary(DICTIONARY_EN);
+
+
+    const std::vector<std::pair<std::vector<std::pair<Note, float>>, std::vector<Note>>> test_set_001 = {
+        {{{Note::C3, 0.5}, {Note::D3, 0.5}, {Note::E3, 0.5}} , {Note::C3, Note::D3, Note::E3}},
+    };
+
+    int index = 0;
+    int nb_fails = 0;
+    for (const auto& test : test_set_001) {
+        index++;
+        fs::path wav_file = fs::path("data") / fs::path("gen_wav") / fs::path("gen_wav" + std::to_string(index) + ".wav");
+        auto notes_with_durations = test.first;
+        auto expected_note_seq = test.second;
+
+        generate_wav(notes_with_durations, wav_file);
+
+        ArpeggioDetector detector;
+        auto detected_sequence = detector.detect_note_sequence(wav_file, 0, true);
+
+        CHECK(detected_sequence == expected_note_seq);
+    }
+
+    return nb_fails;
+}
+
 int test_audio_detection() {
     PRINT_TEST_HEADER("AUDIO DETECTION - TEST MODE");
 
@@ -696,7 +733,7 @@ int test_audio_detection() {
 
         auto file = fs::path(audio_file);
         std::string result;
-        audio_detection(DICTIONARY_EN, file, 25, result);
+        audio_detection(DICTIONARY_EN, file, 25, true, result);
         CHECK(result == expected);
         nb_fails += (expected != result);
     }
@@ -712,6 +749,7 @@ int test_audio_yin() {
     Yin yin;
     float pitch = 0;
 
+
     printf("About to test how many samples are needed to detect the pitch in a given signal\n");
     printf("WARNING: this test has an absolute disregard for memory managment, hang tight this could hurt a little...\n");
 
@@ -723,5 +761,9 @@ int test_audio_yin() {
 
 
     printf("Pitch is found to be %f with buffer length %i and probabiity %f\n", pitch, buffer_length, Yin_getProbability(&yin));
+
+    Note note = (Note)frequencyToMidiNote(pitch);
+    std::cout << " NOTE: " << note_to_string(note) << std::endl;
+
     return 0;
 }
