@@ -91,7 +91,7 @@ bool RuneDetector::decode_word_image(const fs::path& file_path, Word& word)
 
 	make_white_rune_black_background(word_image);
 	//cv::imshow("word_image after", word_image);
-	//cv::waitKey(0);
+	//cv::waitKey(1000);
 	//cv::destroyAllWindows();
 
 
@@ -518,7 +518,7 @@ void addTextToImage(
 	// Optional: Display the image
 	if (showImage) {
 		cv::imshow(windowName, image);
-		cv::waitKey(0);
+		cv::waitKey(1000);
 		cv::destroyWindow(windowName);
 	}
 }
@@ -619,7 +619,7 @@ bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& d
 		if (debug_mode) {
 			cv::imshow("Detected Runes", original_img);
 			cv::imshow("Pattern to find", pattern_image_original);
-			cv::waitKey(2000); // Wait for a key press to close the window
+			cv::waitKey(1000); // Wait for a key press to close the window
 			cv::destroyAllWindows();
 		}
 	}
@@ -800,4 +800,42 @@ bool RuneDetector::generate_scale_factors(const cv::Mat& image, const cv::Mat& p
 	}
 
 	return true;
+}
+
+
+
+int RuneDetector::image_detection(const fs::path& dictionary_file, const fs::path& image_file) {
+
+	// TODO: generate rune patterns from the dictionary dynamically and keep them in memory
+	const auto RUNES_FOLDER = fs::path("data/runes");
+
+    // Load dictionary
+    Dictionary dictionary(dictionary_file);
+    RuneDetector rune_detector(&dictionary);
+	rune_detector.load_rune_folder(RUNES_FOLDER);
+
+    std::vector<Word> detected_words;
+    rune_detector.detect_words(image_file, detected_words);
+    // Afficher la séquence de runes detectees
+    std::cout << "==== DETECTED RUNES ====" << std::endl;
+    for(const auto& word : detected_words) {
+        std::cout << word.get_hash() << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    
+    std::cout << "==== TRANSLATION ==== " << std::endl;
+    for(const auto& word : detected_words) {
+        std::cout << word.get_hash() << " -> " << dictionary.translate(word) << std::endl;
+	}
+
+	return -1; // Placeholder for image detection logic
+}
+
+template <typename T>
+int test_check(const T& expected, const T& result) {
+    bool testOK = (result == expected);
+    auto resultStr = testOK ? "[ OK ] " : "[ KO ] ";
+    std::cout << resultStr << "expected: [" << expected << "]  result: [" << result << "]" << std::endl;
+    return testOK ? 0 : 1;
 }

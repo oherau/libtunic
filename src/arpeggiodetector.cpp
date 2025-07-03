@@ -464,3 +464,52 @@ bool ArpeggioDetector::detect_words(const std::vector<Note>& notes, std::vector<
 
     return true;
 }
+
+
+int ArpeggioDetector::audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, bool yin_algo, std::string& result) {
+
+    // DETECTION MODE
+    Dictionary dictionary(dictionary_file);
+
+    std::vector<float> audioData;
+
+    ArpeggioDetector noteDetector;
+    std::vector<Note> detected_sequence = noteDetector.detect_note_sequence(audio_file, note_length, yin_algo);
+    //std::vector<Note> detected_sequence = noteDetector.detect_note_sequence_aubio(audio_file);
+
+    // detected sequence
+    std::cout << "==== detected_sequence ====" << std::endl;
+    for (size_t i = 0; i < detected_sequence.size(); ++i) {
+        std::cout << note_to_string(detected_sequence[i]) << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    auto note_sequence = noteDetector.get_clean_sequence(detected_sequence);
+
+    // Afficher la séquence nettoyee
+    std::cout << "==== NOTE SEQUENCE ====" << std::endl;
+    for (size_t i = 0; i < note_sequence.size(); ++i) {
+        std::cout << note_to_string(note_sequence[i]) << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    ArpeggioDetector arpeggio_detector;
+    arpeggio_detector.load_dictionary(dictionary);
+
+    std::vector<Word> words;
+    bool detecttion_res = arpeggio_detector.detect_words(note_sequence, words);
+
+    //result = dictionary.translate(note_sequence);
+    std::cout << std::endl;
+    std::cout << "==== DETECTED WORDS ==== " << std::endl << result << std::endl << std::endl;
+    for (const auto& word : words) {
+        auto word_hash = word.get_hash();
+        std::string word_translation;
+        if (dictionary.get_translation(word_hash, word_translation)) {
+            std::cout << word_translation << " ";
+        }
+    }
+    std::cout << std::endl << std::endl;
+
+    return 0;
+}

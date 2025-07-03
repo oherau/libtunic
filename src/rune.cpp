@@ -226,7 +226,7 @@ bool Rune::decode_image(const cv::Mat& rune_image)
 	rune_image.copyTo(rune_image_with_borders(paste_zone)); // Copy source image into the ROI of the destination
 
 	//cv::imshow("Result using copyTo()", rune_image_with_borders);
-	//cv::waitKey(0); // Wait for a key press to close the window
+	//cv::waitKey(1000); // Wait for a key press to close the window
 
 
  	for(int shift = 0; shift < 16; ++shift) {

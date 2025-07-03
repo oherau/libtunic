@@ -61,6 +61,7 @@ public:
 	//std::vector<Rune> get_runes_from_arpeggio(const Arpeggio& arpeggio);
     static std::vector<int> get_indexed_note_sequence(std::vector<Note>& note_sequence, ScaleType scale = ScaleType::Mixolydian);
     bool detect_words(const std::vector<Note>& notes, std::vector<Word>& words);
+    int audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, bool yin_algo, std::string& result);
 private:
     Note findClosestNote(double frequency);
     void detect_note_sequence(const std::vector<float>& samples, uint32_t sampleRate, std::vector<Note>& detected_sequence, double note_length = DEFAULT_NOTE_LENGTH);

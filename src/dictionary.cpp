@@ -241,7 +241,7 @@ bool Dictionary::generate_images(const fs::path& image_dir, std::string extensio
 
 		// for debugging purposes, display the image
         //cv::imshow(word_str + " " + word_hash, result);
-        //cv::waitKey(0); // Wait for a key press to close the window
+        //cv::waitKey(1000); // Wait for a key press to close the window
         //cv::destroyAllWindows();
 
         std::string filename = word_hash + "_" + word_str + extension;

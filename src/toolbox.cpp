@@ -286,66 +286,6 @@ cv::Mat applyClosing(const cv::Mat& input_image, int kernel_size, int iterations
 	return closed_image;
 }
 
-//
-//int main() {
-//    // Create a sample binary image with a white square and some noise
-//    cv::Mat src = cv::Mat::zeros(300, 300, CV_8UC1); // Black background, single channel
-//    cv::rectangle(src, cv::Point(70, 70), cv::Point(230, 230), cv::Scalar(255), cv::FILLED); // White square
-//    cv::circle(src, cv::Point(150, 150), 20, cv::Scalar(0), cv::FILLED); // Black hole in center
-//    cv::circle(src, cv::Point(50, 50), 5, cv::Scalar(255), cv::FILLED);  // Small white "salt" noise
-//    cv::rectangle(src, cv::Point(200, 20), cv::Point(210, 30), cv::Scalar(255), cv::FILLED); // Another noise
-//    cv::line(src, cv::Point(10, 280), cv::Point(30, 260), cv::Scalar(255), 2); // Thin line noise
-//
-//    // You can also load an image:
-//    // cv::Mat src = cv::imread("path_to_your_image.jpg", cv::IMREAD_GRAYSCALE); // Load as grayscale
-//    // if (src.empty()) {
-//    //     std::cerr << "Error: Could not load image." << std::endl;
-//    //     return -1;
-//    // }
-//    // // Convert to binary if it's not already
-//    // cv::threshold(src, src, 128, 255, cv::THRESH_BINARY);
-//
-//    cv::imshow("Original Image", src);
-//
-//    // --- Apply operations using the new functions ---
-//
-//    int current_kernel_size = 5;
-//    int current_iterations = 1;
-//
-//    // Erosion
-//    cv::Mat eroded_result = applyErosion(src, current_kernel_size, current_iterations);
-//    cv::imshow("Eroded Image (Kernel: " + std::to_string(current_kernel_size) + ", Iterations: " + std::to_string(current_iterations) + ")", eroded_result);
-//
-//    // Dilation
-//    cv::Mat dilated_result = applyDilation(src, current_kernel_size, current_iterations);
-//    cv::imshow("Dilated Image (Kernel: " + std::to_string(current_kernel_size) + ", Iterations: " + std::to_string(current_iterations) + ")", dilated_result);
-//
-//    // Opening
-//    cv::Mat opening_result = applyOpening(src, current_kernel_size, current_iterations);
-//    cv::imshow("Opening (Kernel: " + std::to_string(current_kernel_size) + ", Iterations: " + std::to_string(current_iterations) + ")", opening_result);
-//
-//    // Closing
-//    cv::Mat closing_result = applyClosing(src, current_kernel_size, current_iterations);
-//    cv::imshow("Closing (Kernel: " + std::to_string(current_kernel_size) + ", Iterations: " + std::to_string(current_iterations) + ")", closing_result);
-//
-//
-//    // Example with different parameters
-//    int larger_kernel_size = 9;
-//    int more_iterations = 2;
-//
-//    cv::Mat more_eroded = applyErosion(src, larger_kernel_size, more_iterations);
-//    cv::imshow("More Eroded (K: " + std::to_string(larger_kernel_size) + ", I: " + std::to_string(more_iterations) + ")", more_eroded);
-//
-//    cv::Mat more_dilated = applyDilation(src, larger_kernel_size, more_iterations);
-//    cv::imshow("More Dilated (K: " + std::to_string(larger_kernel_size) + ", I: " + std::to_string(more_iterations) + ")", more_dilated);
-//
-//
-//    cv::waitKey(0);
-//    cv::destroyAllWindows();
-//
-//    return 0;
-//}
-
 std::vector<std::string> loadLinesFromFile(const fs::path& filename) {
 	std::vector<std::string> lines; // Vector to store the lines
 	std::ifstream inputFile(filename); // Open the file for reading
@@ -419,7 +359,7 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 	int block_count = 0;
 
 	//cv::imshow("Image before applying partition", output_image);
-	//cv::waitKey(0);
+	//cv::waitKey(1000);
 
 	// 5. Iterate through the found contours
 	for (const auto& contour : contours) {
@@ -453,7 +393,7 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 
 	//// Display the image with detected blocks
 	//cv::imshow("Image with Detected Blocks", output_image);
-	//cv::waitKey(0);
+	//cv::waitKey(1000);
 
 	return true;
 }

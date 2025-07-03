@@ -43,6 +43,7 @@ public:
     cv::Mat crop_black_borders(const cv::Mat& image);
 	bool dictionarize(const fs::path& image_path, bool debug_mode = false);
     bool draw_text(cv::Mat& image, const cv::Rect& bounding_box, const std::string& translation, const cv::Scalar& color, int thickness);
+    int image_detection(const fs::path& dictionary_file, const fs::path& image_file);
 private:
     Dictionary* m_dictionary = nullptr;
     std::unordered_map<std::string, cv::Mat> m_rune_images; // Map to store rune images

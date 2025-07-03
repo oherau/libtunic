@@ -18,12 +18,39 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\arpeggio.cpp" />
+    <ClCompile Include="..\src\arpeggiodetector.cpp" />
+    <ClCompile Include="..\src\dictionary.cpp" />
+    <ClCompile Include="..\src\note.cpp" />
+    <ClCompile Include="..\src\rune.cpp" />
+    <ClCompile Include="..\src\runedetector.cpp" />
+    <ClCompile Include="..\src\test.cpp" />
+    <ClCompile Include="..\src\toolbox.cpp" />
+    <ClCompile Include="..\src\wavgenerator.cpp" />
+    <ClCompile Include="..\src\word.cpp" />
+    <ClCompile Include="..\src\yin.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\arpeggio.h" />
+    <ClInclude Include="..\include\arpeggiodetector.h" />
+    <ClInclude Include="..\include\color_print.h" />
+    <ClInclude Include="..\include\dictionary.h" />
+    <ClInclude Include="..\include\note.h" />
+    <ClInclude Include="..\include\rune.h" />
+    <ClInclude Include="..\include\runedetector.h" />
+    <ClInclude Include="..\include\toolbox.h" />
+    <ClInclude Include="..\include\wavgenerator.h" />
+    <ClInclude Include="..\include\word.h" />
+    <ClInclude Include="..\include\yin.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{98A6C901-6522-48C3-9E2C-D9B22A638506}</ProjectGuid>
-    <RootNamespace>libtunic</RootNamespace>
+    <ProjectGuid>{b09aca5e-301f-43ea-8635-03a9b8eea955}</ProjectGuid>
+    <RootNamespace>test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -102,20 +129,19 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_world4110d.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>opencv_world4110d.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.dll" "$(TargetDir)" /Y /D
-xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetDir)" /Y /D</Command>
+      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.dll" "$(TargetDir)" /Y /D</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -126,49 +152,21 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetD
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opencv_world4110.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>opencv_world4110.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.dll" "$(TargetDir)" /Y /D
-xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDir)" /Y /D</Command>
+      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.dll" "$(TargetDir)" /Y /D</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="src\note.cpp" />
-    <ClCompile Include="src\arpeggio.cpp" />
-    <ClCompile Include="src\dictionary.cpp" />
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\arpeggiodetector.cpp" />
-    <ClCompile Include="src\rune.cpp" />
-    <ClCompile Include="src\runedetector.cpp" />
-    <ClCompile Include="src\toolbox.cpp" />
-    <ClCompile Include="src\wavgenerator.cpp" />
-    <ClCompile Include="src\word.cpp" />
-    <ClCompile Include="src\yin.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\arpeggio.h" />
-    <ClInclude Include="include\audioData.h" />
-    <ClInclude Include="include\color_print.h" />
-    <ClInclude Include="include\dictionary.h" />
-    <ClInclude Include="include\note.h" />
-    <ClInclude Include="include\arpeggiodetector.h" />
-    <ClInclude Include="include\rune.h" />
-    <ClInclude Include="include\runedetector.h" />
-    <ClInclude Include="include\toolbox.h" />
-    <ClInclude Include="include\wavgenerator.h" />
-    <ClInclude Include="include\word.h" />
-    <ClInclude Include="include\yin.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
