@@ -22,7 +22,7 @@ cv::Mat applyOpening(const cv::Mat& input_image, int kernel_size, int iterations
 cv::Mat applyClosing(const cv::Mat& input_image, int kernel_size, int iterations = 1);
 
 std::vector<std::string> loadLinesFromFile(const fs::path& file);
-bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition);
+bool partition_image(cv::Mat& image, std::vector<cv::Rect>& partition);
 
 double frequencyToMidiNote(double frequency_hz);
 

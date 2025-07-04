@@ -263,17 +263,39 @@ bool RuneDetector::dictionarize(const fs::path& image_path, bool debug_mode)
 	// prepare the image
 	make_white_rune_black_background(original_img);
 
-	std::vector<cv::Mat> partition;
+	std::vector<cv::Rect> partition;
 	if (!partition_image(original_img, partition)) {
 		std::cerr << "Error: Could not partition the image into potential rune words zones." << std::endl;
 		return false;
 	}
 
-	for(const auto& potential_word_image : partition) {
+	int i = 1;
+	for(const auto& part : partition) {
+		
+		//// Draw the bounding rectangle on the output image
+		//cv::rectangle(original_img, part.tl(), part.br(), cv::Scalar(0, 255, 0), 2); // Green rectangle
+
+		//// List the detected block's coordinates
+		//std::cout << "Block " << ++block_count << ": (x=" << bounding_rect.x
+		//	<< ", y=" << bounding_rect.y
+		//	<< ", width=" << bounding_rect.width
+		//	<< ", height=" << bounding_rect.height << ")" << std::endl;
+
+		// You can also extract the individual block as a separate image
+		cv::Mat extracted_block = original_img(part).clone();
+		//cv::imshow("Extracted Block " + std::to_string(block_count), extracted_block); 
+		//cv::imwrite("extracted_block_" + std::to_string(block_count) + ".jpg", extracted_block); // Save to file
+
+		if (debug_mode) {
+			// for debugging purposes, display the image
+			cv::imshow("Part " + i, extracted_block);
+			cv::waitKey(1000); // Wait for a key press to close the window
+			cv::destroyAllWindows();
+		}
 
 		// Decode the word image
 		Word word;
-		if (!word.decode_image(potential_word_image)) {
+		if (!word.decode_image(extracted_block)) {
 			std::cerr << "Error: Could not decode word image." << std::endl;
 			continue; // Skip to the next image if decoding fails
 		}
@@ -286,6 +308,8 @@ bool RuneDetector::dictionarize(const fs::path& image_path, bool debug_mode)
 		// Add the new word to the dictionary
 		m_dictionary->add_word(word.get_hash(), word.to_pseudophonetic());
 		std::cout << "Added new word '" << word.get_hash() << "' to the dictionary." << std::endl;
+
+		i++;
 	}
 
 	return false;

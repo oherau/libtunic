@@ -27,6 +27,14 @@ void PRINT_TEST_HEADER(const std::string& title) {
     std::cout << std::endl << std::endl << sep << std::endl << std::string(offset, ' ') << title << std::endl << sep << std::endl << std::endl;
 }
 
+int get_index_sequence_diff(const std::vector<int>& s1, const std::vector<int>& s2) {
+
+    int result = -1;
+    for (int i = 0; i < s1.size() && i < s2.size(); i++) {
+        result += std::abs(s1[i] - s2[i]);
+    }
+    return result;
+}
 
 // Platform-specific headers
 #ifdef _WIN32
@@ -84,15 +92,15 @@ fs::path getExecutablePath() {
 //  CONSTANTS
 ///////////////////////////////////////////////////////
 
-const auto RUNES_FOLDER = fs::path("../../data/runes");
-const auto DICTIONARY_EN = fs::path("../../lang/dictionary.txt");
+const auto RUNES_FOLDER = fs::path("../../../data/runes");
+const auto DICTIONARY_EN = fs::path("../../../lang/dictionary.txt");
 
 
 ///////////////////////////////////////////////////////
 //  TEST CASES
 ///////////////////////////////////////////////////////
 
-TEST_CASE("rune", "") {
+TEST_CASE("unify_rune_hash", "[translate]") {
 
     PRINT_TEST_HEADER("RUNE - TEST MODE");
 
@@ -122,7 +130,7 @@ TEST_CASE("rune", "") {
     }
 }
 
-TEST_CASE("word","") {
+TEST_CASE("unify_word_hash","[translate]") {
 
     PRINT_TEST_HEADER("WORD - TEST MODE");
 
@@ -149,7 +157,7 @@ TEST_CASE("word","") {
     }
 }
 
-TEST_CASE("audio", "") {
+TEST_CASE("translate_rune_sequence", "[translate]") {
 
     PRINT_TEST_HEADER("AUDIO - TEST MODE");
 
@@ -178,7 +186,7 @@ TEST_CASE("audio", "") {
 }
 
 
-TEST_CASE("image_detect_words", "") {
+TEST_CASE("image_detect_words", "[image]") {
     PRINT_TEST_HEADER("IMAGE - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
@@ -186,7 +194,7 @@ TEST_CASE("image_detect_words", "") {
     rune_detector.load_rune_folder(RUNES_FOLDER);
 
     const std::vector< std::pair<std::string, std::string> > test_set_001 = {
-        { "../../data/screenshots/found_an_item.jpg" , "found an item"},
+        { "../../../data/screenshots/found_an_item.jpg" , "found an item"},
         //{ "data/screenshots/found_bracelet.png" , "found an item"},
         //{ "data/screenshots/manual_page_10.jpg" , "lots of runes !!!"},
     };
@@ -206,7 +214,7 @@ TEST_CASE("image_detect_words", "") {
 }
 
 
-TEST_CASE("rune_image_generation", "") {
+TEST_CASE("rune_image_generation", "[image]") {
 
 
     PRINT_TEST_HEADER("RUNE IMAGE GENERATION - TEST MODE");
@@ -235,7 +243,7 @@ TEST_CASE("rune_image_generation", "") {
     CHECK(nb_fails == 0);
 }
 
-TEST_CASE("dictionary_image_gen", "") {
+TEST_CASE("dictionary_image_gen", "[image]") {
 
 
     PRINT_TEST_HEADER("DICT IMAGE GENERATION - TEST MODE");
@@ -243,12 +251,12 @@ TEST_CASE("dictionary_image_gen", "") {
     Dictionary dictionary(DICTIONARY_EN);
     dictionary.save(DICTIONARY_EN);
 
-    fs::path current_path = fs::path("../../data/runes");
+    fs::path current_path = fs::path("../../../data/runes");
     dictionary.generate_images(current_path, ".png");
 
 }
 
-TEST_CASE("decode_word_image", "") {
+TEST_CASE("decode_word_image", "[image]") {
 
 
     PRINT_TEST_HEADER("DECODE WORD IMAGE - TEST MODE");
@@ -256,7 +264,7 @@ TEST_CASE("decode_word_image", "") {
     Dictionary dictionary(DICTIONARY_EN);
     RuneDetector rune_detector(&dictionary);
 
-    fs::path unknown_words_folder = fs::path("../../data/unknown_words");
+    fs::path unknown_words_folder = fs::path("../../../data/unknown_words");
 
     // Check if the folder exists
     if (!fs::exists(unknown_words_folder) || !fs::is_directory(unknown_words_folder)) {
@@ -311,7 +319,7 @@ TEST_CASE("decode_word_image", "") {
 }
 
 
-TEST_CASE("dictionary_load_save", "") {
+TEST_CASE("dictionary_load_save", "[translate]") {
 
 
     PRINT_TEST_HEADER("DICT LOAD SAVE - TEST MODE");
@@ -339,7 +347,7 @@ TEST_CASE("dictionary_load_save", "") {
     CHECK(nb_fails == 0);
 }
 
-TEST_CASE("dictionarize", "") {
+TEST_CASE("dictionarize", "[image][translate]") {
 
 
     PRINT_TEST_HEADER("DICTIONARIZE - TEST MODE");
@@ -350,7 +358,7 @@ TEST_CASE("dictionarize", "") {
     Dictionary dictionary;
     RuneDetector rune_detector(&dictionary);
 
-    rune_detector.dictionarize(fs::path("../../data/screenshots/manual_page_10.jpg"), true);
+    rune_detector.dictionarize(fs::path("../../../data/screenshots/manual_page_10.jpg"), true);
 
     std::cout << "Detected words in the image:" << std::endl;
     std::vector<std::string> word_list;
@@ -366,7 +374,7 @@ TEST_CASE("dictionarize", "") {
     CHECK(nb_fails == 0);
 }
 
-TEST_CASE("arpeggio_sequence", "") {
+TEST_CASE("arpeggio_sequence", "[audio]") {
 
 
     PRINT_TEST_HEADER("ARPEGGIO SEQUENCE - TEST MODE");
@@ -409,16 +417,7 @@ TEST_CASE("arpeggio_sequence", "") {
 }
 
 
-int get_index_sequence_diff(const std::vector<int>& s1, const std::vector<int>& s2) {
-
-    int result = -1;
-    for (int i = 0; i < s1.size() && i < s2.size(); i++) {
-        result += std::abs(s1[i] - s2[i]);
-    }
-    return result;
-}
-
-TEST_CASE("audio_get_indexed_note_sequence", "") {
+TEST_CASE("audio_get_indexed_note_sequence", "[audio]") {
     PRINT_TEST_HEADER("AUDIO GET INDEXED NOTE SEQ - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
@@ -476,7 +475,7 @@ TEST_CASE("audio_get_indexed_note_sequence", "") {
     CHECK(nb_fails == 0);
 }
 
-TEST_CASE("audio_detect_words", "") {
+TEST_CASE("audio_detect_words", "[audio][translate]") {
     PRINT_TEST_HEADER("AUDIO DETECT WORDS - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
@@ -515,7 +514,7 @@ TEST_CASE("audio_detect_words", "") {
     CHECK(nb_fails == 0);
 }
 
-TEST_CASE("audio_detection_generated_wav_detect_notes", "") {
+TEST_CASE("audio_detection_generated_wav_detect_notes", "[audio]") {
     PRINT_TEST_HEADER("AUDIO DETECTION - GENERATED WAV- TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
@@ -550,14 +549,14 @@ TEST_CASE("audio_detection_generated_wav_detect_notes", "") {
     CHECK(nb_fails == 0);
 }
 
-TEST_CASE("audio_detection", "") {
+TEST_CASE("audio_detection", "[audio][translate]") {
     PRINT_TEST_HEADER("AUDIO DETECTION - TEST MODE");
 
     Dictionary dictionary(DICTIONARY_EN);
     ArpeggioDetector detector;
 
     const std::vector< std::pair<std::string, std::string> > test_set_001 = {
-        { "../../data/audio_captures/open_chest.wav" , "found an item"},
+        { "../../../data/audio_captures/open_chest.wav" , "found an item"},
     };
 
     int nb_fails = 0;

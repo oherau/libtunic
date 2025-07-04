@@ -97,6 +97,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>$(SolutionDir)intermediate\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(SolutionDir)intermediate\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -131,7 +140,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,6 +148,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opencv_world4110d.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
+      <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.dll" "$(TargetDir)" /Y /D
@@ -155,7 +165,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetD
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -163,6 +173,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetD
       <AdditionalDependencies>opencv_world4110.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
+      <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.dll" "$(TargetDir)" /Y /D

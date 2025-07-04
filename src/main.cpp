@@ -5,14 +5,8 @@
 #include <queue>
 #include <filesystem>
 #include <string>
-#include "dictionary.h"
 #include "arpeggiodetector.h"
-#include "rune.h"
 #include "runedetector.h"
-#include "word.h"
-#include "color_print.h"
-#include "note.h"
-#include "yin.h"
 //#include "libtuneic.h"
 namespace fs = std::filesystem;
 

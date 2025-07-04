@@ -306,7 +306,7 @@ std::vector<std::string> loadLinesFromFile(const fs::path& filename) {
 	return lines;      // Return the vector of lines
 }
 
-bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
+bool partition_image(cv::Mat& image, std::vector<cv::Rect>& partition)
 {
 	partition.clear();
 
@@ -346,7 +346,7 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 	// Optional: Dilate the lines to ensure they are connected and form closed boundaries
 	// This helps in finding complete rectangular contours.
 	cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-	cv::dilate(binary_lines, binary_lines, kernel, cv::Point(-1, -1), 2); // Dilate a couple of times
+	cv::dilate(binary_lines, binary_lines, kernel, cv::Point(-1, -1), 10); // Dilate a couple of times
 
 	// 4. Find contours in the binary image
 	std::vector<std::vector<cv::Point>> contours;
@@ -358,42 +358,25 @@ bool partition_image(cv::Mat& image, std::vector<cv::Mat>& partition)
 	std::cout << "image before partition:" << std::endl;
 	int block_count = 0;
 
-	//cv::imshow("Image before applying partition", output_image);
-	//cv::waitKey(1000);
-
 	// 5. Iterate through the found contours
+	std::vector<cv::Point> approx_poly;
 	for (const auto& contour : contours) {
 		// Approximate the contour to a polygon
-		std::vector<cv::Point> approx_poly;
+		approx_poly.clear();
 		cv::approxPolyDP(contour, approx_poly, cv::arcLength(contour, true) * 0.02, true);
 
 		// Check if the approximated polygon has 4 vertices (a rectangle) and is sufficiently large
 		// You might need to adjust the contour area threshold based on your image and expected block sizes
-		if (approx_poly.size() == 4 && cv::isContourConvex(approx_poly) && cv::contourArea(contour) > (RUNE_DEFAULT_SIZE.area() / 2.0)) {
-			// Get the bounding rectangle for the current contour
-			cv::Rect bounding_rect = cv::boundingRect(contour);
 
-			// Draw the bounding rectangle on the output image
-			cv::rectangle(output_image, bounding_rect.tl(), bounding_rect.br(), cv::Scalar(0, 255, 0), 2); // Green rectangle
-
-			// List the detected block's coordinates
-			std::cout << "Block " << ++block_count << ": (x=" << bounding_rect.x
-				<< ", y=" << bounding_rect.y
-				<< ", width=" << bounding_rect.width
-				<< ", height=" << bounding_rect.height << ")" << std::endl;
-
-			// You can also extract the individual block as a separate image
-			cv::Mat extracted_block = image(bounding_rect);
-			//cv::imshow("Extracted Block " + std::to_string(block_count), extracted_block); 
-			//cv::imwrite("extracted_block_" + std::to_string(block_count) + ".jpg", extracted_block); // Save to file
-
-			partition.push_back(extracted_block); // Add the extracted block to the partition vector
+		if (approx_poly.size() == 4 && cv::isContourConvex(approx_poly)) {
+			auto area = cv::contourArea(contour);
+			if (area > (RUNE_DEFAULT_SIZE.area() / 2.0)) {
+				// Get the bounding rectangle for the current contour
+				cv::Rect bounding_rect = cv::boundingRect(contour);
+				partition.push_back(cv::Rect(bounding_rect));
+			}
 		}
 	}
-
-	//// Display the image with detected blocks
-	//cv::imshow("Image with Detected Blocks", output_image);
-	//cv::waitKey(1000);
 
 	return true;
 }
