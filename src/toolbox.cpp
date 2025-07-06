@@ -346,7 +346,14 @@ bool partition_image(cv::Mat& image, std::vector<cv::Rect>& partition)
 	// Optional: Dilate the lines to ensure they are connected and form closed boundaries
 	// This helps in finding complete rectangular contours.
 	cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-	cv::dilate(binary_lines, binary_lines, kernel, cv::Point(-1, -1), 10); // Dilate a couple of times
+	const auto nb_filtering = 1;
+	//cv::dilate(binary_lines, binary_lines, kernel, cv::Point(-1, -1), nb_filtering); // Dilate a couple of times
+	//cv::erode(binary_lines, binary_lines, kernel, cv::Point(-1, -1), nb_filtering); // Erode a couple of times
+
+	//cv::imshow("gray_image", gray_image);
+	//cv::imshow("binary_lines", binary_lines);
+	//cv::waitKey(0); // Wait for a key press to close the window
+
 
 	// 4. Find contours in the binary image
 	std::vector<std::vector<cv::Point>> contours;

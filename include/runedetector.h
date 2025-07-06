@@ -35,7 +35,7 @@ public:
 	bool load_rune_folder(const fs::path& dict_folder);
     bool register_word_image(const fs::path& word_image);
 	//bool detect_runes(const fs::path& image_path, std::vector<Rune>& detected_runes);
-    bool detect_words(const fs::path& image_path, std::vector<Word>& detected_words, bool debug_mode = false);
+    bool detect_words(const fs::path& image_path, std::vector<Word>& detected_words, bool adaptative = true, bool debug_mode = false);
     void displayMatProperties(const cv::Mat& mat, const std::string& name = "Mat");
     bool generate_scale_factors(const cv::Mat& image, const cv::Mat& pattern, std::vector<double>& scale_factors);
     cv::Mat get_image_lines(const cv::Mat& src);

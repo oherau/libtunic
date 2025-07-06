@@ -10,6 +10,7 @@ public:
 	Word() = default;
 	Word(const std::string& str);
 	Word(const std::vector<Rune>& runes);
+	bool operator==(const Word& other) const { return m_runes == other.m_runes; }
 	std::string get_hash() const;
 	std::string to_pseudophonetic() const;
 	bool parse_runes(const std::string& str, std::vector<Rune>& runes);

@@ -17,8 +17,8 @@ Dictionary::Dictionary(const fs::path& filePath) {
 
 long count_notes(const std::string& str) {
     long unsigned int count = 0;
-    for(const char c : str) {
-        if(c >= 'A' && c <= 'G')
+    for (const char c : str) {
+        if (c >= 'A' && c <= 'G')
             count++;
     }
     return count;
@@ -28,33 +28,33 @@ bool Dictionary::load(const fs::path& filePath) {
 
     printf("Loading dict file: %s\n", filePath.string().c_str());
     std::ifstream file(filePath);
-    if(!file.is_open()) {
+    if (!file.is_open()) {
         printf("Error loading dict file: %s\n", filePath.string().c_str());
         return false;
     }
 
-        
+
     std::string line;
     while (std::getline(file, line)) {
         //printf("%s\n", line.c_str());
 
         auto pos = line.find(DICT_ENTRY_SEPARATOR);
-        if(pos != std::string::npos) {
+        if (pos != std::string::npos) {
             auto wordRunes = std::string(line.substr(0, pos));
-            auto wordTranslation = std::string(line.substr(pos+1));
+            auto wordTranslation = std::string(line.substr(pos + 1));
             printf("[%s] = [%s]\n", wordRunes.c_str(), wordTranslation.c_str());
 
             std::vector<Rune> runes;
             Word word(wordRunes);
 
-            if(word.size() > 0) {
-				auto hash = word.get_hash();
-                if(m_hashtable.contains(hash)) {
+            if (word.size() > 0) {
+                auto hash = word.get_hash();
+                if (m_hashtable.contains(hash)) {
                     printf("WARNING : duplicate entry [%s]\n", hash.c_str());
-                } 
+                }
                 else {
                     m_hashtable[hash] = wordTranslation;
-                    
+
                     //printf(" nbNotes = %lu\n", nbNotes);
                     notes_max_length = std::max(notes_max_length, word.size());
                     notes_min_length = std::min(notes_min_length, word.size());
@@ -71,7 +71,7 @@ bool Dictionary::load(const fs::path& filePath) {
 
 bool Dictionary::save(const fs::path& filePath) {
     std::ofstream file(filePath);
-    if(!file.is_open())
+    if (!file.is_open())
         return false;
 
     //std::string line;
@@ -122,35 +122,35 @@ bool Dictionary::save(const fs::path& filePath) {
     return true;
 }
 
-bool Dictionary::has_hash(const std::string& hash) const
+bool Dictionary::has_hash(const std::string& word_hash) const
 {
-	return m_hashtable.find(hash) != m_hashtable.end();
+    return m_hashtable.find(word_hash) != m_hashtable.end();
 }
 
-bool Dictionary::add_word(const std::string& word, const std::string& translation)
+bool Dictionary::add_word(const std::string& word_hash, const std::string& translation)
 {
-    if(word.empty() || translation.empty()) {
+    if (word_hash.empty() || translation.empty()) {
         return false;
-	}
+    }
 
-    if(m_hashtable.contains(word)) {
-        if(m_hashtable[word] == translation) {
-            printf("INFO: word [%s] already exists in the dictionary with the same translation\n", word.c_str());
+    if (m_hashtable.contains(word_hash)) {
+        if (m_hashtable[word_hash] == translation) {
+            printf("INFO: word [%s] already exists in the dictionary with the same translation\n", word_hash.c_str());
             return true;
-		}
-        printf("WARNING: word [%s] already exists in the dictionary and translation mismatch ! existing: [%s] new: [%s]\n", word.c_str(), m_hashtable[word].c_str(), translation.c_str());
+        }
+        printf("WARNING: word [%s] already exists in the dictionary and translation mismatch ! existing: [%s] new: [%s]\n", word_hash.c_str(), m_hashtable[word_hash].c_str(), translation.c_str());
         return false;
-	}
-	m_hashtable[word] = translation;
+    }
+    m_hashtable[word_hash] = translation;
 
     return true;
 }
 
 bool Dictionary::get_hash_list(std::vector<std::string>& hash_list) const
 {
-    for(const auto& [key, value] : m_hashtable) {
+    for (const auto& [key, value] : m_hashtable) {
         hash_list.push_back(key);
-	}
+    }
     return true;
 }
 
@@ -164,20 +164,20 @@ bool Dictionary::get_word_list(std::vector<std::string>& hash_list) const
 
 bool Dictionary::get_translation(const std::string& word, std::string& translation) const
 {
-	if(m_hashtable.contains(word)) {
+    if (m_hashtable.contains(word)) {
         translation = m_hashtable.at(word);
         return true;
     }
-	return false;
+    return false;
 }
 
 std::string Dictionary::translate(const std::string& str) {
 
-    if(m_hashtable.contains(str))
+    if (m_hashtable.contains(str))
         return m_hashtable[str];
-    
+
     // word not found but added to be saved in file
-    if(m_learning)
+    if (m_learning)
         m_hashtable[str] = str;
 
     return "";
@@ -185,12 +185,12 @@ std::string Dictionary::translate(const std::string& str) {
 
 std::string Dictionary::translate(const Word& word) {
 
-	std::string hash = word.get_hash();
+    std::string hash = word.get_hash();
     if (m_hashtable.contains(hash))
         return m_hashtable[hash];
 
     // word not found but we can still translate rune by rune
-	std::string str = word.to_pseudophonetic();
+    std::string str = word.to_pseudophonetic();
 
     if (m_learning)
         m_hashtable[hash] = str;
@@ -201,7 +201,7 @@ std::string Dictionary::translate(const Word& word) {
 std::string Dictionary::translate(const std::vector<Rune>& runes) {
 
     std::stringstream ss;
-    for(const auto& rune : runes) {
+    for (const auto& rune : runes) {
         ss << rune.to_pseudophonetic();
     }
 
@@ -211,13 +211,14 @@ std::string Dictionary::translate(const std::vector<Rune>& runes) {
 std::string Dictionary::translate(const std::vector<Word>& words) {
 
     std::stringstream ss;
-	bool first = true;
+    bool first = true;
     for (const auto& word : words) {
-        if(!first) {
+        if (!first) {
             ss << " ";
-        } else {
+        }
+        else {
             first = false;
-		}
+        }
         ss << translate(word);
     }
 
@@ -226,39 +227,41 @@ std::string Dictionary::translate(const std::vector<Word>& words) {
 
 bool Dictionary::generate_images(const fs::path& image_dir, std::string extension) const
 {
-    if(image_dir.empty() || !fs::exists(image_dir) || !fs::is_directory(image_dir)) {
+    if (image_dir.empty() || !fs::exists(image_dir) || !fs::is_directory(image_dir)) {
         std::cerr << "Error: Invalid image directory path." << std::endl;
         return false;
-	}
+    }
 
     for (const auto& [word_hash, word_str] : m_hashtable) {
         Word word(word_hash);
 
         cv::Mat image;
-        auto rune_size =RUNE_DEFAULT_SIZE;
+        auto rune_size = RUNE_DEFAULT_SIZE;
         auto tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height;
         word.generate_image(rune_size, tickness, image);
 
-		// for debugging purposes, display the image
+        // for debugging purposes, display the image
         //cv::imshow(word_str + " " + word_hash, result);
         //cv::waitKey(1000); // Wait for a key press to close the window
         //cv::destroyAllWindows();
 
         std::string filename = word_hash + "_" + word_str + extension;
-		fs::path filepath = image_dir / filename;
+        fs::path filepath = image_dir / filename;
 
         bool success = false;
-        if(extension == ".png") {
+        if (extension == ".png") {
             success = cv::imwrite(filepath.string(), image);
-        } else if(extension == ".jpg" || extension == ".jpeg") {
+        }
+        else if (extension == ".jpg" || extension == ".jpeg") {
             std::vector<int> compression_params;
             compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
             compression_params.push_back(95); // Set quality to 95 (out of 100)
             success = cv::imwrite(filepath.string(), image, compression_params);
-        } else {
+        }
+        else {
             std::cerr << "Error: Unsupported image format. Use .png or .jpg." << std::endl;
             return false;
-		}
+        }
 
         if (success) {
             std::cout << "Image saved successfully as: " << filepath << std::endl;

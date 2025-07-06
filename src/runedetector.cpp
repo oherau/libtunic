@@ -547,7 +547,7 @@ void addTextToImage(
 	}
 }
 
-bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& detected_words, bool debug_mode)
+bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& detected_words, bool adaptative, bool debug_mode)
 {
 	auto original_img = cv::imread(image_path.string(), cv::IMREAD_COLOR_BGR);
 	if (original_img.empty()) {
@@ -555,18 +555,36 @@ bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& d
 		return false;
 	}
 
-	std::vector<double> scale_factors;
+	const auto ADAPTATIVE_DETECTIONS_THRESHOLD = 5;
+	std::vector<double> scale_factors, adapt_scale_factors_confirmed;
+	int adapt_detections = 0;
 	cv::Mat image;
 	cv::cvtColor(original_img, image, cv::COLOR_BGR2GRAY);
 	image.convertTo(image, CV_8U);
 	std::vector<RuneZone> detected_runes_zones;
+
+	// TODO: add itermediate function to determine if the runes are:
+	//   - white on dark backround (nothing to do)
+	//   - black on bright background (invert color)
+
+
 
 	// detect word in image
 	for (const auto& [key, pattern_image_original] : m_rune_images) {
 
 		auto word = Word(key);
 
-		generate_scale_factors(pattern_image_original, image, scale_factors);
+		double best_scale_factor = 0;
+		double best_scale_corr = 0;
+
+		if (adaptative && adapt_detections > ADAPTATIVE_DETECTIONS_THRESHOLD) {
+			// once enough runes are found we use the few factors that gave sucessful detections (list should be much smaller)
+			scale_factors = adapt_scale_factors_confirmed;
+		}
+		else {
+			generate_scale_factors(image, pattern_image_original, scale_factors);
+		}
+
 
 		for (const auto& scale_factor : scale_factors) {
 			// Resize the rune image to the current scale factor
@@ -603,7 +621,21 @@ bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& d
 
 			for (int i = 2; i < result_cols - 2; i++) {
 				for (int j = 2; j < result_rows - 2; j++) {
+
+					// keep correlation even is not good enough
+					if (result.at<float>(j, i) > best_scale_corr) {
+						best_scale_factor = scale_factor;
+						best_scale_corr = result.at<float>(j, i);
+					}
+
 					if (result.at<float>(j, i) > 0.8) {
+						if (adaptative) {
+							adapt_detections++;
+							if (std::find(adapt_scale_factors_confirmed.begin(), adapt_scale_factors_confirmed.end(), scale_factor) == adapt_scale_factors_confirmed.end()) {
+								adapt_scale_factors_confirmed.push_back(scale_factor);
+							}
+						}
+
 						cv::Rect bounding_box = cv::Rect(i, j, pattern_image.cols, pattern_image.rows);
 						detected_runes_zones.push_back({ word, bounding_box });
 						if (debug_mode) {
@@ -641,9 +673,12 @@ bool RuneDetector::detect_words(const fs::path& image_path, std::vector<Word>& d
 			}
 		}
 		if (debug_mode) {
+			//cv::destroyAllWindows();
 			cv::imshow("Detected Runes", original_img);
 			cv::imshow("Pattern to find", pattern_image_original);
-			cv::waitKey(1000); // Wait for a key press to close the window
+			std::cout << "Best scale factor: " << best_scale_factor << std::endl
+				<< "Best scale correlation: " << best_scale_corr << std::endl;
+			cv::waitKey(500); // Wait for a key press to close the window
 			cv::destroyAllWindows();
 		}
 	}
@@ -778,38 +813,29 @@ bool RuneDetector::generate_scale_factors(const cv::Mat& image, const cv::Mat& p
 {
 	// TODO: improve this method to use the size of the rune in the image to determine the scale factors
 	int nb_values = 10;
-	
-	// simple method
-	double min_factor = 0.15; // half size of the pattern
-	double max_factor = 1;   // 4 times pattern size
 
-	// ellaborated method
-	//scale_factors.clear();
-	//if (image.empty() || pattern.empty()) {
-	//	std::cerr << "Error: One of the images is empty." << std::endl;
-	//	return false;
-	//}
+	// ex: MIN SIZE rune 20x42 pix on a 1680x1280 screenshot of a page of the manual (horizontal: 0.011904761 vertical: 0.0328125 )
+	// ex: MAX SIZE rune 16x27 pix on a 342x255   screenshot of a page of the manual (horizontal: 0.046783626 vertical: 0.10588235)
+	double MIN_FACTOR_BOUND = 0.2; // LOWER FACTOR BOUND
+	double MAX_FACTOR_BOUND = 0.8;  // UPPER FACTOR BOUND
 
-	//// min size: 
-	//// - a page of the manual: 1680x1280 pixels 
-	//// - the smallest rune on the page: 18x36 pixels
-	//// -> min width factor: 18 / 1680 = 0,0107142857142857
-	//// -> min height factor: 36 / 1280 = 0,028125
+	double min_h_ratio = 0.011904761;
+	double min_w_ratio = 0.0328125;
+	double max_h_ratio = 0.046783626;
+	double max_w_ratio = 0.10588235;
 
-	//// max size:
-	//// - close up of the in-game popup: 298x53 pixels
-	//// - the biggest rune on the popup: 18x31 pixels
-	//// -> max width ratio: 298 / 18 = 16,55555555555556
-	//// -> max height ration: 53 / 31 = 0,5849056603773585
+	double min_h_rune = min_h_ratio * image.rows;
+	double min_w_rune = min_w_ratio * image.cols;
+	double max_h_rune = max_h_ratio * image.rows;
+	double max_w_rune = max_w_ratio * image.cols;
 
+	double min_h_factor = min_h_rune / RUNE_DEFAULT_SIZE.height;
+	double min_w_factor = min_w_rune / RUNE_DEFAULT_SIZE.width;
+	double max_h_factor = max_h_rune / RUNE_DEFAULT_SIZE.height;
+	double max_w_factor = max_w_rune / RUNE_DEFAULT_SIZE.width;
 
-	//// pattern is always on one line, so we can use it to determine the width of a single rune
-	//auto single_rune_width = static_cast<double>(pattern.rows) * 18.0f / 32.0f; // average height / width ratio of the rune
-
-	//auto runne_image_ratio = static_cast<double>(image.cols) / single_rune_width;
-
-	//const double min_factor = 0.01 * runne_image_ratio; // Minimum scale factor
-	//const double max_factor = 0.06 * runne_image_ratio; // Maximum scale factor
+	double min_factor = std::max(MIN_FACTOR_BOUND, std::min(min_h_factor, min_w_factor));
+	double max_factor = std::min(MAX_FACTOR_BOUND, std::max(max_h_factor, max_w_factor));
 
 	// Calculate the base for the exponential growth
 		// We want min_factor * (ratio^S) = max_factor
@@ -825,7 +851,6 @@ bool RuneDetector::generate_scale_factors(const cv::Mat& image, const cv::Mat& p
 
 	return true;
 }
-
 
 
 int RuneDetector::image_detection(const fs::path& dictionary_file, const fs::path& image_file) {
