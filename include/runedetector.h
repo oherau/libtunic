@@ -15,6 +15,20 @@ const double RUNE_MINIMAL_AREA = 100; // Minimum area for a rune to be considere
 const double RUNE_DETECTION_THRESHOLD = 0.8f; // Threshold the result to find matches - Adjust as needed. default 0.8
 const char RUNE_WORD_TRANSLATION_SEPARATOR = '_'; // Separator for rune word translations
 
+// Enum for horizontal text alignment
+enum class HorizontalAlignment {
+    Left,
+    Center,
+    Right
+};
+
+// Enum for vertical text alignment
+enum class VerticalAlignment {
+    Top,
+    Middle,
+    Bottom
+};
+
 struct RuneZone { // Renamed from CharacterZone
     Word word;
     cv::Rect rect;
