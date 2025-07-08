@@ -1,14 +1,17 @@
+#include <opencv2/imgproc.hpp>
 #include "toolbox.h"
 #include "wavgenerator.h"
 #include <iostream>
 #include <fstream>
-#include <opencv2/imgproc.hpp>
 #include <vector>
 #include <cmath>   // For sin and M_PI
 #include <numeric> // For std::iota (C++11+)
 #include <map>     // For std::map
 #include <string>  // For std::string in main's debug output
 #include <cstdint> // For uint16_t, uint32_t, int16_t etc.
+#include <sstream> // Required for std::ostringstream and std::istringstream
+#include <opencv2/opencv.hpp> // For cv::Mat, cv::Size, cv::resize
+#include <algorithm>          // For std::min
 
 // Define PI if not available (M_PI is a common GNU extension)
 #ifndef M_PI
@@ -182,6 +185,8 @@ bool make_white_rune_black_background(cv::Mat& image) {
 #include <string> // For std::to_string
 #include <rune.h>
 #include <note.h>
+#include "runedictionary.h"
+#include <dictionary.h>
 
 // Function to apply Erosion
 // input_image: The source image (should be grayscale or binary for typical use)
@@ -418,43 +423,153 @@ int generate_wav(const std::vector<std::pair<Note, double>>& notes, const fs::pa
 	return 0;
 }
 
-//int generate_test_wav(const fs::path& wav_file) {
-//	WaveGenerator generator;
-//
-//	// Define your sequence of notes and durations using the Note enum
-//	generator.addNote(Note::C5, 0.5); // C5 for 0.5 seconds
-//	generator.addNote(Note::D5, 0.5); // D5 for 0.5 seconds
-//	generator.addNote(Note::E5, 0.5); // E5 for 0.5 seconds
-//	generator.addNote(Note::F5, 0.5); // F5 for 0.5 seconds
-//	generator.addNote(Note::G5, 1.0); // G5 for 1.0 seconds (longer duration)
-//	generator.addNote(Note::A5, 0.25); // A5 for 0.25 seconds (shorter duration)
-//	generator.addNote(Note::SILENCE, 0.25); // Add a short rest
-//	generator.addNote(Note::G5, 0.75); // G5 for 0.75 seconds
-//	generator.addNote(Note::C5, 1.5); // Back to C5 for a longer duration
-//
-//	if (generator.save(wav_file.string().c_str())) {
-//		std::cout << "Successfully created melody_enum.wav" << std::endl;
-//	}
-//	else {
-//		std::cerr << "Failed to create melody_enum.wav" << std::endl;
-//	}
-//
-//	// You can create another one with different notes
-//	WaveGenerator song_generator(44100, 16, 2); // Stereo output
-//	song_generator.addNote(Note::A4, 0.8);
-//	song_generator.addNote(Note::C5, 0.8);
-//	song_generator.addNote(Note::E5, 0.8);
-//	song_generator.addNote(Note::A5, 1.2);
-//	song_generator.addNote(Note::SILENCE, 0.1); // Short rest
-//	song_generator.addNote(Note::G5, 0.5);
-//	song_generator.addNote(Note::C5, 0.5);
-//
-//	if (song_generator.save("my_song_enum.wav")) {
-//		std::cout << "Successfully created my_song_enum.wav (stereo)" << std::endl;
-//	}
-//	else {
-//		std::cerr << "Failed to create my_song_enum.wav" << std::endl;
-//	}
-//
-//	return 0;
-//}
+bool translate_dictionary(const fs::path& rune_dictionary_file, const fs::path& lang_dictionnary_file) {
+
+	RuneDictionary rune_dict_src, rune_dict_dst;
+	rune_dict_src.load(rune_dictionary_file);
+
+	Dictionary lang_dict_src(lang_dictionnary_file);
+
+	auto filename = lang_dictionnary_file.stem().string();
+	auto sep_pos = filename.find('-');
+	auto target_language = filename.substr(sep_pos + 1);
+
+	std::string word;
+	std::vector<std::string> hash_list;
+	rune_dict_src.get_hash_list(hash_list);
+	for (const auto& hash : hash_list) {
+		rune_dict_src.get_translation(hash, word);
+		std::string translation = "";
+		try {
+			auto entry = lang_dict_src.find(word);
+			if (entry.has_value()) {
+				translation = entry.value().to_string();
+			}
+			translation += " "; // space befor following suffix
+		}
+		catch (...)
+		{
+		}
+		// always suffix translation witho original word
+		translation += "{" + word + "}";
+		printf(" %s (eng) => %s (%s)\n", word.c_str(), translation.c_str(), target_language.c_str());
+		rune_dict_dst.add_word(hash, translation);
+	}
+
+	auto parent_folder = rune_dictionary_file.parent_path();
+	auto target_file = parent_folder / fs::path("dictionary." + target_language + ".txt");
+	rune_dict_dst.save(target_file);
+
+	return true;
+}
+
+bool translate_dictionary(const fs::path& rune_dictionary_file, const std::string& target_language) {
+	RuneDictionary dict_src, dict_dst;
+	dict_src.load(rune_dictionary_file);
+
+	std::string word;
+	std::vector<std::string> hash_list;
+	dict_src.get_hash_list(hash_list);
+	for (const auto& hash : hash_list) {
+		dict_src.get_translation(hash, word);
+		std::string translation = "";
+		try {
+			translation = translate(word, "eng", target_language);
+			translation += " "; // space befor following suffix
+		}
+		catch (...) 
+		{}
+		// always suffix translation witho original word
+		translation += "{" + word + "}";
+		printf(" %s (eng) => %s (%s)\n", word.c_str(), translation.c_str(), target_language.c_str());
+		dict_dst.add_word(hash, translation);
+	}
+
+	auto parent_folder = rune_dictionary_file.parent_path();
+	auto target_file = parent_folder / fs::path("dictionary." + target_language + ".txt");
+	dict_dst.save(target_file);
+
+	return true;
+}
+
+std::string translate(const std::string& textToTranslate,
+	const std::string& sourceLanguageCode,
+	const std::string& targetLanguageCode) {
+
+	//const auto DICTIONARY_ROOT_PATH = fs::path("../../../dict");
+	const auto dictionary_file = "../../../dict/" + std::string(sourceLanguageCode) + "-" + std::string(targetLanguageCode) + ".tei";
+
+	//fs::path dict_filepath = DICTIONARY_ROOT_PATH / dictionary_file;
+
+	Dictionary dict(dictionary_file);
+	auto dict_entry = dict.find(textToTranslate);
+
+	if (dict_entry.has_value()) {
+		return dict_entry.value().to_string();
+	}
+
+	return "";
+}
+
+// Using a lambda for the transformation, ensuring it's locale-safe for basic ASCII.
+// The static_cast<int>(c) is important to prevent undefined behavior with char types
+// that might be signed and have negative values (like some extended ASCII chars)
+// when passed to functions like std::tolower that expect an int.
+void toLowerFast(std::string& s) {
+	std::transform(s.begin(), s.end(), s.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+}
+
+// If you need a version that returns a new string and leaves the original untouched:
+std::string toLowerFastCopy(const std::string& s) {
+	std::string lower_s = s; // Make a copy
+	std::transform(lower_s.begin(), lower_s.end(), lower_s.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+	return lower_s;
+}
+
+void resize_to_fit_max_bounds(cv::Mat& image, const cv::Size& max_bounds) {
+
+	// 1. Handle empty image case
+	if (image.empty()) {
+		std::cerr << "Warning: Cannot resize empty image." << std::endl;
+		return;
+	}
+
+	// 2. Get current image dimensions
+	int current_width = image.cols;
+	int current_height = image.rows;
+
+	// 3. Get maximum allowed dimensions
+	int max_width = max_bounds.width;
+	int max_height = max_bounds.height;
+
+	// 4. Check if the image already fits within the bounds
+	if (current_width <= max_width && current_height <= max_height) {
+		// Image already fits or is smaller, no upscaling required.
+		// Do nothing.
+		return;
+	}
+
+	// 5. Calculate scaling factors for both width and height
+	//    Use double for precise ratio calculation to avoid integer truncation.
+	double scale_factor_w = static_cast<double>(max_width) / current_width;
+	double scale_factor_h = static_cast<double>(max_height) / current_height;
+
+	// 6. Choose the smaller scale factor to ensure the image fits fully within the bounds
+	//    (e.g., if image is very wide but not tall, it scales by width ratio)
+	double scale_factor = (std::min)(scale_factor_w, scale_factor_h);
+
+	// 7. Calculate new dimensions
+	//    Using cv::round to ensure integer values for new dimensions
+	int new_width = cvRound(current_width * scale_factor);
+	int new_height = cvRound(current_height * scale_factor);
+
+	// 8. Perform the resize operation
+	//    cv::INTER_AREA is generally recommended for shrinking images as it avoids aliasing.
+	cv::resize(image, image, cv::Size(new_width, new_height), 0, 0, cv::INTER_AREA);
+
+	std::cout << "Resized image from " << current_width << "x" << current_height
+		<< " to " << image.cols << "x" << image.rows << " (target max: "
+		<< max_width << "x" << max_height << ")" << std::endl;
+}

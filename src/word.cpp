@@ -1,5 +1,5 @@
 #include "word.h"
-#include "dictionary.h"
+#include "runedictionary.h"
 #include <opencv2/opencv.hpp>
 #include <toolbox.h>
 
@@ -70,7 +70,7 @@ bool Word::parse_runes(const std::string& str, std::vector<Rune>& runes)
 }
 
 
-bool Word::generate_image(cv::Size2i rune_size, int tickness, cv::Mat& output_image) const {
+bool Word::generate_image(cv::Size2i rune_size, double tickness, cv::Mat& output_image) const {
 
 	if (m_runes.empty()) {
 		return false;

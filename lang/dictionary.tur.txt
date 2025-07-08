@@ -1,0 +1,56 @@
+###############################
+######                   ######
+###############################
+2ca0-02a4-03a0= {lived}
+3db8-22a4= {sees}
+###############################
+######         (         ######
+###############################
+0ea0-20a0-208c=(bak.) build. {built}
+33b3-208c=(bağlaç) ki {that}
+9317-03a0=(bağlaç.) ve {and}
+0c0c-2cac-0304=(edat)/dahilen/zihnen/yürekten/evde/içinde/(edat) zarfında/iç. His heart sank within him. Bütün ümitleri kırıldı. He lives within his income. Gelirine uygun bir şekilde yaşar. The car skidded to within a meter of the baby before it stopped. Araba kayarak bebeğe bir metre kala durabildi. {within}
+23a3=(eski ye)   bir/ne kadar {the}
+82a7=(had/he/olmak/saymak/tutmak/almak/elinde tutmak/fikir taşımak/elde etmek/ettirmek/(k.dili.) aldatmak/(k.dili.) cinsel ilişkide bulunmak. Yardımcı fiil olarak geçmiş zamanı gösterir. (msl.) (I.) go. Giderim. (I.) have gone. Gittim.) have to meli/bir işin içinde parmağı olmak. have a mind to niyeti olmak have and hold kanunen sahip olmak. have at işe koyulmak. (I.)'ve been had. Üç kağıda geldim. have done with bitirmek/kocamdan boşanacağım.)/artık yetmek (msl.) {have}
+23a1=(zam.) onlar .They say it' going to rain Yağacak diyorlar. {they}
+1f17=(çoğ.) nos.) (kıs.) number. {no}
+3bb0=(ünlem) orada/oraya/o noktada/o hususta/o yer/(ünlem) İşte ! Alsana ! Gördün mü? (Bu kelime be fiilinden önce gelince varlık belirtir ve özne fiilden sonra gelir: There is still time. Vakit var daha. There is a burglar down tairs. Aşağıda hırsız var.There is no reason. Sebep yok. Is there anybody at home? Evde kimse var mı?) There {there}
+###############################
+######         B         ######
+###############################
+9317=bir ünlü ile başlayan kelimelerden evvel kullanılan belgesiz sıfat/bir. - ana- (önek) yukarı/tekrar {an}
+2288-20a9-208c=büyük/çok/uzun/fazla/önemli/yüksek/asil/mahir/fevkalade/(k.dili.) mükemmel/(k.dili.) çok iyi/meraklı olmak. the great büyükler. greats  (k.dili.) gözde kimseler. Great Bear Büyük Ayı. Great Britain Büyük Britanya. great circle (coğr.) büyük daire. a great deal çok/büyük kriz/öIüm ile hayatm arasındaki hat. great friends iyi dostlar. great horned owl büyük bir baykuş/Egretta alba/Casmerodius albus. It would be great if ...olsa çok iyi olur. Iive to a great old age çok yaşlanmak. greatly  çokça greatness  büyüklük. {great}
+###############################
+######         G         ######
+###############################
+9f14-3c9e=girmek/dahil olmak/delmek/girişmek/üye olmak/sokmak/yazmak/(huk.) usulen mahkeme huzuruna getirmek/tasarruf etmek üzere bir mülke girmek/gümrüğe (mal.) beyannamesi vermek/telif hakkı almak için gereken malumatı vermek/sahneye çıkmak. enter into başlamak/iştirak etmek/ilgilenmek/(bütünün) bir unsuru olmak: tartışmak {enter}
+3db9-02a8-2ca8-208c=gizli/esrarlı/mahrem/sır/anlaşılmaz şey {secret}
+###############################
+######         I         ######
+###############################
+0003=ingiliz alfabesinin ilk harfi/birinci kalite veya derece/(müz.) la notası/(A.B.D.) en yüksek not. {a}
+###############################
+######         K         ######
+###############################
+2988-0304-03a0=kalıba dökmek {found}
+9f17=kendine değgin/öz. Ann' own book Ann'in kendi kitabı. be one' own man başına buyruk olmak. come into one' own kendi malına sahip olmak/layık olduğu mevkie erişmek. hold one' own yerini korumak on one' own kendi hesabına {own}
+###############################
+######         P         ######
+###############################
+a08e-9f10=parça/bent/hesapta münferit rakam/aynntıları ile yazmak veya kaydetmek/keza {item}
+###############################
+######         S         ######
+###############################
+309b-2ca0-21a8=saray/saray gibi bina/muhteşem ev/(k. dili) lüks eğlence yeri veya galeri. {palace}
+###############################
+######         T         ######
+###############################
+93b3-1eb4-0304-3c96=tehlikeye atmak/cesaret etmek/cüretli/cesaret isteyen (bir iş) {adventure}
+###############################
+######         Y         ######
+###############################
+2888-1c12=yetenek/iktidar/hüküm/etki/(fiz.) erk/devlet/(huk.) bir başkası adına herhangi bir işi yapma yetkisi/melaike/(mat.) üs/makinanın işleme kabiliyeti/merceğin büyütme yeteneği. kuvvet power boat motorla işleyen vapur veya gemi. power lathe torna makinası. power of attorney vekâletname. power of life and death idam etme veya af yetkisi. power over a person bir kimseye hükmünü geçirebilme kuvveti. power plant elektrik santralı. power point (İng.) duvar fişi. power politics kuvvet politikası. power structure yetkili ve kuvvetli olan grup. power tool motorlu aygıt. come into power iş başına geçmek/iktidar mevkiine geçmek. electric power elektrik kuvveti. party in power iktidar partisi. raise to the tenth power (mat.) onuncu üse çıkarmak. the powers that be başta olanlar {power}
+###############################
+######         �         ######
+###############################
+2da8-3c9d=şehir/şehir halkı. city block kesişen sokaklarla ayrılan arsa. cityreds şehirde büyümüş. city dump çöplük. city editor gazetede mahalli muhabirleri idare eden müdür. city father ehri yöneten kimse. city manager belediye baskanı. clty planner şehir mimarı. citystate  şehir devleti {city}

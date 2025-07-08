@@ -30,8 +30,10 @@
     <ClInclude Include="..\include\wavgenerator.h" />
     <ClInclude Include="..\include\word.h" />
     <ClInclude Include="..\include\yin.h" />
+    <ClInclude Include="..\libs\tinyxml2\tinyxml2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\libs\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="..\src\arpeggio.cpp" />
     <ClCompile Include="..\src\arpeggiodetector.cpp" />
     <ClCompile Include="..\src\dictionary.cpp" />
@@ -39,6 +41,7 @@
     <ClCompile Include="..\src\note.cpp" />
     <ClCompile Include="..\src\rune.cpp" />
     <ClCompile Include="..\src\runedetector.cpp" />
+    <ClCompile Include="..\src\runedictionary.cpp" />
     <ClCompile Include="..\src\toolbox.cpp" />
     <ClCompile Include="..\src\wavgenerator.cpp" />
     <ClCompile Include="..\src\word.cpp" />
@@ -138,7 +141,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include;$(SolutionDir)\libs\curl\include;$(SolutionDir)\libs\jsoncpp\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
@@ -151,8 +154,7 @@
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.dll" "$(TargetDir)" /Y /D
-xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetDir)" /Y /D</Command>
+      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.dll" "$(TargetDir)" /Y /D</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -163,7 +165,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetD
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\include;$(SolutionDir)\libs;$(SolutionDir)\libs\opencv\include;$(SolutionDir)\libs\curl\include;$(SolutionDir)\libs\jsoncpp\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
@@ -176,8 +178,7 @@ xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.pdb" "$(TargetD
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.dll" "$(TargetDir)" /Y /D
-xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.pdb" "$(TargetDir)" /Y /D</Command>
+      <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.dll" "$(TargetDir)" /Y /D</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

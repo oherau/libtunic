@@ -14,8 +14,8 @@
 #include <filesystem>
 #include <numbers> // for Pi
 #include "note.h"
-#include <dictionary.h>
-#include <arpeggio.h>
+#include "runedictionary.h"
+#include "arpeggio.h"
 
 const auto DEFAULT_NOTE_LENGTH = 75.0f; // in millisec
 const auto SILENCE_TONE_THRESHOLD = 10.0f;
@@ -53,7 +53,7 @@ std::string remove_octave(const std::string& str);
 class ArpeggioDetector {
 public:
     ArpeggioDetector() =  default;
-    bool load_dictionary(const Dictionary& dictionary);
+    bool load_dictionary(const RuneDictionary& dictionary);
     std::vector<Note> detect_note_sequence(const std::filesystem::path& filePath, double note_length = DEFAULT_NOTE_LENGTH, bool yin_algo = false);
     //std::vector<Note> detect_note_sequence_aubio(const fs::path& wavFilePath, float threshold = 0.7f, int minNote = (int)Note::C0, int maxNote = (int)Note::B8);
     std::vector<Note> get_clean_sequence(const std::vector<Note>& sequence);

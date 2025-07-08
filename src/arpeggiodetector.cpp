@@ -123,7 +123,7 @@ std::string remove_octave(const std::string& str) {
     return std::string(ss.str());
 }
 
-bool ArpeggioDetector::load_dictionary(const Dictionary& dictionary)
+bool ArpeggioDetector::load_dictionary(const RuneDictionary& dictionary)
 {
     std::vector<std::string> hash_list;
     dictionary.get_hash_list(hash_list);
@@ -469,7 +469,7 @@ bool ArpeggioDetector::detect_words(const std::vector<Note>& notes, std::vector<
 int ArpeggioDetector::audio_detection(const fs::path& dictionary_file, const fs::path& audio_file, double note_length, bool yin_algo, std::string& result) {
 
     // DETECTION MODE
-    Dictionary dictionary(dictionary_file);
+    RuneDictionary dictionary(dictionary_file);
 
     std::vector<float> audioData;
 

@@ -1,275 +1,166 @@
 #include "dictionary.h"
-#include "arpeggiodetector.h"
-#include "word.h"
-#include <fstream>
-#include <string>
-#include <vector>
-#include <deque>
-#include <sstream>
-#include <algorithm> // For std::count_if
-#include <cctype>    // For std::isalnum
-#include <cmath> // For std::max and std::min
-#include <opencv2/opencv.hpp>
+#include <toolbox.h>
 
-Dictionary::Dictionary(const fs::path& filePath) {
-    load(filePath);
-}
+Dictionary::Dictionary(const fs::path& filePath) : m_filepath(filePath)
+{ }
 
-long count_notes(const std::string& str) {
-    long unsigned int count = 0;
-    for (const char c : str) {
-        if (c >= 'A' && c <= 'G')
-            count++;
-    }
-    return count;
-}
+// Function to parse a TEI dictionary file and search for a word
+std::optional<DictionaryEntry> Dictionary::find(const std::string& searchTerm)
+{
+    tinyxml2::XMLDocument doc;
 
-bool Dictionary::load(const fs::path& filePath) {
-
-    printf("Loading dict file: %s\n", filePath.string().c_str());
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
-        printf("Error loading dict file: %s\n", filePath.string().c_str());
-        return false;
+    // Load the XML file
+    if (doc.LoadFile(m_filepath.string().c_str()) != tinyxml2::XML_SUCCESS) {
+        std::cerr << "Error loading XML file: " << m_filepath << std::endl;
+        return std::nullopt;
     }
 
+    // Find the root element (usually <TEI> or <TEI.2> or similar in TEI P5)
+    // Assuming the dictionary content is directly under <TEI> or <text>-><body>-><entryFree> etc.
+    // We'll search directly for <entry> elements.
+    tinyxml2::XMLElement* root = doc.RootElement();
+    if (!root) {
+        std::cerr << "Error: No root element found in XML file." << std::endl;
+        return std::nullopt;
+    }
 
-    std::string line;
-    while (std::getline(file, line)) {
-        //printf("%s\n", line.c_str());
+    // Navigate down the hierarchy: <TEI> -> <text> -> <body>
+    tinyxml2::XMLElement* textElement = root->FirstChildElement("text");
+    if (!textElement) {
+        std::cerr << "Warning: No <text> element found under root. Looking for <entry> directly." << std::endl;
+        // Fallback: if <text> is not found, try to search for entry directly under root
+        // This makes the function slightly more robust to varying TEI structures.
+        // However, if your structure is consistently <text><body>, removing this fallback
+        // would make it stricter.
+        textElement = root; // Start search from root if <text> is missing
+    }
 
-        auto pos = line.find(DICT_ENTRY_SEPARATOR);
-        if (pos != std::string::npos) {
-            auto wordRunes = std::string(line.substr(0, pos));
-            auto wordTranslation = std::string(line.substr(pos + 1));
-            printf("[%s] = [%s]\n", wordRunes.c_str(), wordTranslation.c_str());
+    tinyxml2::XMLElement* bodyElement = nullptr;
+    if (textElement == root) { // If <text> was not found and we defaulted to root
+        bodyElement = root->FirstChildElement("body");
+        if (!bodyElement) { // If <body> is also not found under root, continue with root
+            bodyElement = root;
+        }
+    }
+    else { // If <text> was found
+        bodyElement = textElement->FirstChildElement("body");
+        if (!bodyElement) {
+            std::cerr << "Warning: No <body> element found under <text>. Looking for <entry> directly under <text>." << std::endl;
+            bodyElement = textElement; // Start search for entry under <text>
+        }
+    }
 
-            std::vector<Rune> runes;
-            Word word(wordRunes);
+    // Iterate through all <entry> elements
+    for (tinyxml2::XMLElement* entryElement = bodyElement->FirstChildElement("entry");
+        entryElement != nullptr;
+        entryElement = entryElement->NextSiblingElement("entry"))
+    {
+        // Try to get the <form><orth> element
+        tinyxml2::XMLElement* formElement = entryElement->FirstChildElement("form");
+        tinyxml2::XMLElement* orthElement = nullptr;
+        std::string currentLemma;
 
-            if (word.size() > 0) {
-                auto hash = word.get_hash();
-                if (m_hashtable.contains(hash)) {
-                    printf("WARNING : duplicate entry [%s]\n", hash.c_str());
-                }
-                else {
-                    m_hashtable[hash] = wordTranslation;
-
-                    //printf(" nbNotes = %lu\n", nbNotes);
-                    notes_max_length = std::max(notes_max_length, word.size());
-                    notes_min_length = std::min(notes_min_length, word.size());
-                }
+        if (formElement) {
+            orthElement = formElement->FirstChildElement("orth");
+            if (orthElement && orthElement->GetText()) {
+                currentLemma = orthElement->GetText();
+                toLowerFast(currentLemma);
             }
         }
 
-    }
-    file.close();
-
-    printf("\n");
-    return true;
-}
-
-bool Dictionary::save(const fs::path& filePath) {
-    std::ofstream file(filePath);
-    if (!file.is_open())
-        return false;
-
-    //std::string line;
-    //for(auto const& [wordPhonetic, wordTranslation] : m_hashtable) {
-    //    file << wordPhonetic << DICT_ENTRY_SEPARATOR << wordTranslation << std::endl;
-    //}
-    //file.close();
-
-    // 1. Copy map elements to a vector of pairs
-    std::vector<std::pair<std::string, std::string>> vec(m_hashtable.begin(), m_hashtable.end());
-
-    // 2. Sort the vector by values alphanumerically (case-insensitive)
-    std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
-        // Compare values case-insensitively
-        std::string s1 = a.second;
-        std::string s2 = b.second;
-
-        // Using std::lexicographical_compare and std::tolower for robust case-insensitive comparison
-        return std::lexicographical_compare(s1.begin(), s1.end(),
-            s2.begin(), s2.end(),
-            [](char c1, char c2) {
-                return std::tolower(static_cast<unsigned char>(c1)) <
-                    std::tolower(static_cast<unsigned char>(c2));
-            });
-        });
-
-    // 3. Display sorted elements with headers
-    char currentHeaderChar = '\0'; // Initialize with a character that won't match A-Z
-
-    for (const auto& pair : vec) {
-        if (!pair.second.empty()) { // Ensure the string is not empty
-            char firstChar = std::toupper(static_cast<unsigned char>(pair.second[0]));
-
-            if (firstChar != currentHeaderChar) {
-                // New group, print header
-
-                file << "###############################" << std::endl
-                    << "######         " << firstChar << "         ######" << std::endl
-                    << "###############################" << std::endl;
-                currentHeaderChar = firstChar;
+        // Check if the current entry's lemma matches the search term (case-insensitive search)
+        // You might want a more sophisticated string comparison depending on your needs.
+        if (!currentLemma.empty() && currentLemma == searchTerm) {
+            DictionaryEntry foundEntry;
+            const char* idAttr = entryElement->Attribute("xml:id");
+            if (idAttr) {
+                foundEntry.id = idAttr;
             }
-        }
+            else {
+                foundEntry.id = currentLemma; // Fallback if no xml:id
+            }
+            foundEntry.lemma = currentLemma;
 
-        file << pair.first << DICT_ENTRY_SEPARATOR << pair.second << std::endl;
-    }
+            // Parse senses
+            for (tinyxml2::XMLElement* senseElement = entryElement->FirstChildElement("sense");
+                senseElement != nullptr;
+                senseElement = senseElement->NextSiblingElement("sense"))
+            {
+                Sense currentSense;
+                const char* senseNumAttr = senseElement->Attribute("n");
+                if (senseNumAttr) {
+                    try {
+                        currentSense.number = std::stoi(senseNumAttr);
+                    }
+                    catch (const std::invalid_argument& e) {
+                        std::cerr << "Warning: Invalid sense number '" << senseNumAttr << "' for entry '" << currentLemma << "'." << std::endl;
+                    }
+                    catch (const std::out_of_range& e) {
+                        std::cerr << "Warning: Sense number out of range for entry '" << currentLemma << "'." << std::endl;
+                    }
+                }
 
-    std::cout << "\n--- End of List ---" << std::endl;
-    return true;
-}
+                // Parse cit
+                for (tinyxml2::XMLElement* citElement = senseElement->FirstChildElement("cit");
+                    citElement != nullptr;
+                    citElement = citElement->NextSiblingElement("sense")) {
+                    tinyxml2::XMLElement* quoteElement = citElement->FirstChildElement("quote");
+                    if (quoteElement && quoteElement->GetText()) {
+                        Cit cit;
+                        cit.quote = quoteElement->GetText();
+                        currentSense.cits.push_back(cit);
+                    }
+                }
 
-bool Dictionary::has_hash(const std::string& word_hash) const
-{
-    return m_hashtable.find(word_hash) != m_hashtable.end();
-}
+                // Parse grammatical group
+                tinyxml2::XMLElement* gramGrpElement = senseElement->FirstChildElement("gramGrp");
+                if (gramGrpElement) {
+                    tinyxml2::XMLElement* posElement = gramGrpElement->FirstChildElement("pos");
+                    if (posElement && posElement->GetText()) {
+                        currentSense.gramGrp.partOfSpeech = posElement->GetText();
+                    }
+                }
 
-bool Dictionary::add_word(const std::string& word_hash, const std::string& translation)
-{
-    if (word_hash.empty() || translation.empty()) {
-        return false;
-    }
+                // Parse definition
+                tinyxml2::XMLElement* defElement = senseElement->FirstChildElement("def");
+                if (defElement && defElement->GetText()) {
+                    currentSense.definition = defElement->GetText();
+                }
 
-    if (m_hashtable.contains(word_hash)) {
-        if (m_hashtable[word_hash] == translation) {
-            printf("INFO: word [%s] already exists in the dictionary with the same translation\n", word_hash.c_str());
-            return true;
-        }
-        printf("WARNING: word [%s] already exists in the dictionary and translation mismatch ! existing: [%s] new: [%s]\n", word_hash.c_str(), m_hashtable[word_hash].c_str(), translation.c_str());
-        return false;
-    }
-    m_hashtable[word_hash] = translation;
-
-    return true;
-}
-
-bool Dictionary::get_hash_list(std::vector<std::string>& hash_list) const
-{
-    for (const auto& [key, value] : m_hashtable) {
-        hash_list.push_back(key);
-    }
-    return true;
-}
-
-bool Dictionary::get_word_list(std::vector<std::string>& hash_list) const
-{
-    for (const auto& [key, value] : m_hashtable) {
-        hash_list.push_back(value);
-    }
-    return true;
-}
-
-bool Dictionary::get_translation(const std::string& word, std::string& translation) const
-{
-    if (m_hashtable.contains(word)) {
-        translation = m_hashtable.at(word);
-        return true;
-    }
-    return false;
-}
-
-std::string Dictionary::translate(const std::string& str) {
-
-    if (m_hashtable.contains(str))
-        return m_hashtable[str];
-
-    // word not found but added to be saved in file
-    if (m_learning)
-        m_hashtable[str] = str;
-
-    return "";
-}
-
-std::string Dictionary::translate(const Word& word) {
-
-    std::string hash = word.get_hash();
-    if (m_hashtable.contains(hash))
-        return m_hashtable[hash];
-
-    // word not found but we can still translate rune by rune
-    std::string str = word.to_pseudophonetic();
-
-    if (m_learning)
-        m_hashtable[hash] = str;
-
-    return std::string(str);
-}
-
-std::string Dictionary::translate(const std::vector<Rune>& runes) {
-
-    std::stringstream ss;
-    for (const auto& rune : runes) {
-        ss << rune.to_pseudophonetic();
-    }
-
-    return std::string(ss.str());
-}
-
-std::string Dictionary::translate(const std::vector<Word>& words) {
-
-    std::stringstream ss;
-    bool first = true;
-    for (const auto& word : words) {
-        if (!first) {
-            ss << " ";
-        }
-        else {
-            first = false;
-        }
-        ss << translate(word);
-    }
-
-    return std::string(ss.str());
-}
-
-bool Dictionary::generate_images(const fs::path& image_dir, std::string extension) const
-{
-    if (image_dir.empty() || !fs::exists(image_dir) || !fs::is_directory(image_dir)) {
-        std::cerr << "Error: Invalid image directory path." << std::endl;
-        return false;
-    }
-
-    for (const auto& [word_hash, word_str] : m_hashtable) {
-        Word word(word_hash);
-
-        cv::Mat image;
-        auto rune_size = RUNE_DEFAULT_SIZE;
-        auto tickness = RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * rune_size.height;
-        word.generate_image(rune_size, tickness, image);
-
-        // for debugging purposes, display the image
-        //cv::imshow(word_str + " " + word_hash, result);
-        //cv::waitKey(1000); // Wait for a key press to close the window
-        //cv::destroyAllWindows();
-
-        std::string filename = word_hash + "_" + word_str + extension;
-        fs::path filepath = image_dir / filename;
-
-        bool success = false;
-        if (extension == ".png") {
-            success = cv::imwrite(filepath.string(), image);
-        }
-        else if (extension == ".jpg" || extension == ".jpeg") {
-            std::vector<int> compression_params;
-            compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-            compression_params.push_back(95); // Set quality to 95 (out of 100)
-            success = cv::imwrite(filepath.string(), image, compression_params);
-        }
-        else {
-            std::cerr << "Error: Unsupported image format. Use .png or .jpg." << std::endl;
-            return false;
-        }
-
-        if (success) {
-            std::cout << "Image saved successfully as: " << filepath << std::endl;
-        }
-        else {
-            std::cerr << "Error: Could not save image as " << filepath << std::endl;
+                // Parse examples
+                for (tinyxml2::XMLElement* exampleElement = senseElement->FirstChildElement("example");
+                    exampleElement != nullptr;
+                    exampleElement = exampleElement->NextSiblingElement("example"))
+                {
+                    tinyxml2::XMLElement* egElement = exampleElement->FirstChildElement("eg");
+                    if (egElement && egElement->GetText()) {
+                        Example currentExample;
+                        currentExample.text = egElement->GetText();
+                        currentSense.examples.push_back(currentExample);
+                    }
+                }
+                foundEntry.senses.push_back(currentSense);
+            }
+            return foundEntry; // Found and parsed, return it
         }
     }
 
-    return true;
+    return std::nullopt; // Word not found
+}
+
+// Helper function to print a dictionary entry
+void DictionaryEntry::print() const {
+    std::cout << "------------------------------------" << std::endl;
+    std::cout << "Lemma (ID: " << id << "): " << lemma << std::endl;
+    for (const auto& sense : senses) {
+        std::cout << "  Sense " << sense.number << ":" << std::endl;
+        if (!sense.gramGrp.partOfSpeech.empty()) {
+            std::cout << "    Part of Speech: " << sense.gramGrp.partOfSpeech << std::endl;
+        }
+        std::cout << "    Definition: " << sense.definition << std::endl;
+        for (const auto& example : sense.examples) {
+            std::cout << "    Example: " << example.text << std::endl;
+        }
+    }
+    std::cout << "------------------------------------" << std::endl;
 }

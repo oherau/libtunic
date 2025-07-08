@@ -7,6 +7,7 @@
 #include <string>
 #include "arpeggiodetector.h"
 #include "runedetector.h"
+#include "runedictionary.h"
 //#include "libtuneic.h"
 namespace fs = std::filesystem;
 
@@ -72,9 +73,9 @@ fs::path getExecutablePath() {
 }
 
 
-const auto RUNES_FOLDER = fs::path("data/runes");
-const auto DICTIONARY_EN = fs::path("lang/dictionary.txt");
-
+const auto RUNES_FOLDER = fs::path("../../../data/runes");
+const auto DICTIONARY_ENG = fs::path("../../../lang/dictionary.eng.txt");
+const auto DICTIONARY_FRA = fs::path("../../../lang/dictionary.fra.txt");
 
 int main(int argc, char* argv[]) {
 
@@ -86,24 +87,28 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string filename = argv[1];
+    std::string input_file = argv[1];
 
     int detection_result = -1;
 
-    if (fs::path(filename).extension() == ".wav") {
+    if (fs::path(input_file).extension() == ".wav") {
         double note_length = 75;
         if (argc >= 3) {
             note_length = std::stod(argv[2]);
         }
         ArpeggioDetector audio_detector;
 		std::string result;
-        int detection_result = audio_detector.audio_detection(DICTIONARY_EN, fs::path(filename), note_length, yin_algo, result);
+        int detection_result = audio_detector.audio_detection(DICTIONARY_ENG, fs::path(input_file), note_length, yin_algo, result);
     }
-    if (fs::path(filename).extension() == ".jpg") {
-        Dictionary dictionary;
-        dictionary.load(DICTIONARY_EN);
-        RuneDetector image_detector(&dictionary);
-        int detection_result = image_detector.image_detection(RUNES_FOLDER, fs::path(filename));
+    if (fs::path(input_file).extension() == ".jpg") {
+
+        RuneDictionary rune_dictionary(DICTIONARY_ENG);
+        RuneDetector rune_detector(&rune_dictionary);
+        rune_detector.load_rune_folder(RUNES_FOLDER);
+
+        auto output_file = fs::path(input_file).parent_path() / (fs::path(input_file).stem().string() + std::string("_decrypted") + fs::path(input_file).extension().string());
+
+        int detection_result = rune_detector.image_detection(input_file, output_file);
     }
 
     return detection_result;

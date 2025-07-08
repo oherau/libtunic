@@ -6,7 +6,8 @@
 #include <queue>
 #include <filesystem>
 #include <string>
-#include "dictionary.h"
+#include <cstdint>
+#include "runedictionary.h"
 #include "arpeggiodetector.h"
 #include "rune.h"
 #include "runedetector.h"
@@ -14,7 +15,7 @@
 #include "color_print.h"
 #include "note.h"
 #include "yin.h"
-#include <cstdint>
+
 
 
 ///////////////////////////////////////////////////////
@@ -127,7 +128,7 @@ void deleteFilesInFolder(const fs::path& folderPath) {
 ///////////////////////////////////////////////////////
 
 const auto RUNES_FOLDER = fs::path("../../../data/runes");
-const auto DICTIONARY_EN = fs::path("../../../lang/dictionary.txt");
+const auto DICTIONARY_ENG = fs::path("../../../lang/dictionary.eng.txt");
 
 
 ///////////////////////////////////////////////////////
@@ -138,7 +139,7 @@ TEST_CASE("unify_rune_hash", "[translate]") {
 
     PRINT_TEST_HEADER("unify_rune_hash");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
     RuneDetector rune_detector(&dictionary);
     rune_detector.load_rune_folder(RUNES_FOLDER);
 
@@ -168,7 +169,7 @@ TEST_CASE("unify_word_hash", "[translate]") {
 
     PRINT_TEST_HEADER("unify_word_hash");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
     RuneDetector rune_detector(&dictionary);
     rune_detector.load_rune_folder(RUNES_FOLDER);
 
@@ -195,7 +196,7 @@ TEST_CASE("translate_rune_sequence", "[translate]") {
 
     PRINT_TEST_HEADER("translate_rune_sequence");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
 
     const std::vector< std::pair<std::vector<Rune>, std::string> > test_set_001 = {
         { { Rune(RUNE_VOWEL_A) } , "A"  },
@@ -224,7 +225,7 @@ TEST_CASE("image_detect_words", "[image]") {
 
     PRINT_TEST_HEADER("image_detect_words");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
     RuneDetector rune_detector(&dictionary);
     rune_detector.load_rune_folder(RUNES_FOLDER);
 
@@ -241,7 +242,12 @@ TEST_CASE("image_detect_words", "[image]") {
         auto expected = test.second;
 
         std::vector<Word> detected_words;
-        rune_detector.detect_words(fs::path(image_path), detected_words, true, true);
+        auto original_img = cv::imread(image_path, cv::IMREAD_COLOR_BGR);
+        if (original_img.empty()) {
+        	std::cerr << "Error: Could not load rune image from " << image_path << std::endl;
+            continue;
+        }
+        rune_detector.detect_words(original_img, detected_words, true, true);
 
         auto translated = dictionary.translate(detected_words);
         CHECK(expected == translated);
@@ -272,7 +278,7 @@ TEST_CASE("image_detect_single_word", "[image]") {
         auto word_transl = word.substr(word.find("_") + 1);
 
         // create an empty dictionary
-        Dictionary dictionary;
+        RuneDictionary dictionary;
         dictionary.add_word(word_hash, word_transl);
         deleteFilesInFolder(TEMP_FOLDER);
         dictionary.generate_images(TEMP_FOLDER);
@@ -281,7 +287,12 @@ TEST_CASE("image_detect_single_word", "[image]") {
         rune_detector.load_rune_folder(TEMP_FOLDER);
 
         std::vector<Word> detected_words;
-        rune_detector.detect_words(fs::path(image_path), detected_words, true);
+        auto original_img = cv::imread(image_path, cv::IMREAD_COLOR_BGR);
+        if (original_img.empty()) {
+            std::cerr << "Error: Could not load rune image from " << image_path << std::endl;
+            continue;
+        }
+        rune_detector.detect_words(original_img, detected_words, true);
 
         auto translated = dictionary.translate(detected_words);
 
@@ -296,7 +307,7 @@ TEST_CASE("rune_image_generation", "[image]") {
 
     PRINT_TEST_HEADER("rune_image_generation");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
     std::vector<std::string> hash_list;
     dictionary.get_hash_list(hash_list);
     int nb_fails = 0;
@@ -324,8 +335,8 @@ TEST_CASE("dictionary_image_gen", "[image]") {
 
     PRINT_TEST_HEADER("dictionary_image_gen");
 
-    Dictionary dictionary(DICTIONARY_EN);
-    dictionary.save(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
+    dictionary.save(DICTIONARY_ENG);
 
     fs::path current_path = fs::path("../../../data/runes");
     dictionary.generate_images(current_path, ".png");
@@ -337,7 +348,7 @@ TEST_CASE("decode_word_image", "[image]") {
 
     PRINT_TEST_HEADER("decode_word_image");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
     RuneDetector rune_detector(&dictionary);
 
     fs::path unknown_words_folder = fs::path("../../../data/unknown_words");
@@ -402,10 +413,10 @@ TEST_CASE("dictionary_load_save", "[translate]") {
 
     fs::path temp_file = "test_dictionary.txt";
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
     dictionary.save(temp_file);
 
-    auto original_dictionary_lines = loadLinesFromFile(DICTIONARY_EN);
+    auto original_dictionary_lines = loadLinesFromFile(DICTIONARY_ENG);
     auto saved_dictionary_lines = loadLinesFromFile(temp_file);
 
     int nb_fails = 0;
@@ -430,14 +441,14 @@ TEST_CASE("dictionarize", "[image][translate]") {
     int nb_fails = 0;
     fs::path temp_file = "test_dictionarize.txt";
 
-    Dictionary dictionary;
+    RuneDictionary dictionary;
     RuneDetector rune_detector(&dictionary);
 
     rune_detector.dictionarize(fs::path("../../../data/screenshots/manual_page_10.jpg"), true);
 
     std::cout << "Detected words in the image:" << std::endl;
     std::vector<std::string> word_list;
-    dictionary.get_word_list(word_list);
+    dictionary.get_hash_list(word_list);
     for (const auto& key : word_list) {
         std::string translation;
         dictionary.get_translation(key, translation);
@@ -453,8 +464,8 @@ TEST_CASE("arpeggio_sequence", "[audio]") {
 
     PRINT_TEST_HEADER("arpeggio_sequence");
 
-    Dictionary dictionary(DICTIONARY_EN);
-    dictionary.save(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
+    dictionary.save(DICTIONARY_ENG);
 
     const std::vector< std::pair<std::vector<int>, std::string> > test_set_001 = {
         { {13, 12, 9, 6, 2, 1} , "own"},
@@ -495,7 +506,7 @@ TEST_CASE("audio_get_indexed_note_sequence", "[audio]") {
 
     PRINT_TEST_HEADER("audio_get_indexed_note_sequence");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
 
     ArpeggioDetector arpeggio_detector;
     arpeggio_detector.load_dictionary(dictionary);
@@ -554,7 +565,7 @@ TEST_CASE("audio_detect_words", "[audio][translate]") {
 
     PRINT_TEST_HEADER("audio_detect_words");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
 
     ArpeggioDetector arpeggio_detector;
     arpeggio_detector.load_dictionary(dictionary);
@@ -594,7 +605,7 @@ TEST_CASE("audio_detection_generated_wav_detect_notes", "[audio]") {
 
     PRINT_TEST_HEADER("audio_detection_generated_wav_detect_notes");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
 
     const double STD_NOTE_DURATION = 0.150;
     const std::vector<std::vector<Note>> test_set_001 = {
@@ -630,7 +641,7 @@ TEST_CASE("audio_detection", "[audio][translate]") {
 
     PRINT_TEST_HEADER("audio_detection");
 
-    Dictionary dictionary(DICTIONARY_EN);
+    RuneDictionary dictionary(DICTIONARY_ENG);
     ArpeggioDetector detector;
 
     const std::vector< std::pair<std::string, std::string> > test_set_001 = {
@@ -644,10 +655,25 @@ TEST_CASE("audio_detection", "[audio][translate]") {
 
         auto file = fs::path(audio_file);
         std::string result;
-        detector.audio_detection(DICTIONARY_EN, file, 25, true, result);
+        detector.audio_detection(DICTIONARY_ENG, file, 25, true, result);
         CHECK(result == expected);
         nb_fails += (expected != result);
     }
 
     CHECK(nb_fails == 0);
 }
+
+
+//TEST_CASE("translate_dictionary", "[audio][translate]") {
+//
+//    PRINT_TEST_HEADER("translate_dictionary");
+//
+//    const auto LANG_DICT_FOLDER = fs::path("../../../dict");
+//    const auto RUNE_DICT_FILE = fs::path("../../../lang/dictionary.eng.txt");
+//
+//    for (const auto& entry : std::filesystem::directory_iterator(LANG_DICT_FOLDER)) {
+//        if (entry.is_regular_file() && fs::path(entry).extension() == ".tei" && fs::path(entry).stem().string().find("eng-") == 0) {
+//            translate_dictionary(RUNE_DICT_FILE, entry);
+//        }
+//    }
+//}

@@ -79,7 +79,7 @@ std::string Rune::to_string(unsigned long bin) const {
     return "";
 }
 
-void Rune::draw_segment(const std::initializer_list<cv::Point2d>& segment, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const
+void Rune::draw_segment(const std::initializer_list<cv::Point2d>& segment, double tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const
 {
 	if (segment.size() < 2) return; // Ensure there are at least two points to draw a line
 	// Create a vector of points from the initializer list
@@ -93,7 +93,7 @@ void Rune::draw_segment(const std::initializer_list<cv::Point2d>& segment, int t
 	cv::line(output_image, points[0], points[1], cv::Scalar(255, 255, 255), tickness); // White color
 }
 
-void Rune::draw_circle(const std::initializer_list<cv::Point2d>& radius, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const
+void Rune::draw_circle(const std::initializer_list<cv::Point2d>& radius, double tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const
 {
 	if(radius.size() < 1) return; // Ensure there is at least one point to draw a circle
 	// Create a vector of points from the initializer list
@@ -165,7 +165,7 @@ bool Rune::from_hexa(const std::string& hexString)
     return true;
 }
 
-bool Rune::generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image, bool draw_separator) const {
+bool Rune::generate_image(int x, int y, cv::Size2i size, double tickness, cv::Mat& output_image, bool draw_separator) const {
 
 
 	if(draw_separator)

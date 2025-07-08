@@ -190,7 +190,7 @@ public:
     std::string to_pseudophonetic() const;
 	std::string to_hexa() const;
 	bool from_hexa(const std::string& hexString);
-    bool generate_image(int x, int y, cv::Size2i size, int tickness, cv::Mat& output_image, bool draw_separator = true) const;
+    bool generate_image(int x, int y, cv::Size2i size, double tickness, cv::Mat& output_image, bool draw_separator = true) const;
     bool decode_image(const cv::Mat& image); 
     //operator overloads
     Rune operator+(const Rune& other) const { return Rune(m_rune | other.m_rune);}
@@ -199,8 +199,8 @@ public:
 private:
     unsigned long m_rune;
     std::string to_string(unsigned long bin) const;
-	void draw_segment(const std::initializer_list<cv::Point2d>& segment, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const;
-    void draw_circle(const std::initializer_list<cv::Point2d>& radius, int tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const;
+	void draw_segment(const std::initializer_list<cv::Point2d>& segment, double tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const;
+    void draw_circle(const std::initializer_list<cv::Point2d>& radius, double tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const;
 };
 
 #endif // __RUNE_H__

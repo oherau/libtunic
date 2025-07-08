@@ -19,9 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\libs\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="..\src\arpeggio.cpp" />
     <ClCompile Include="..\src\arpeggiodetector.cpp" />
     <ClCompile Include="..\src\dictionary.cpp" />
+    <ClCompile Include="..\src\runedictionary.cpp" />
     <ClCompile Include="..\src\note.cpp" />
     <ClCompile Include="..\src\rune.cpp" />
     <ClCompile Include="..\src\runedetector.cpp" />
@@ -36,6 +38,7 @@
     <ClInclude Include="..\include\arpeggiodetector.h" />
     <ClInclude Include="..\include\color_print.h" />
     <ClInclude Include="..\include\dictionary.h" />
+    <ClInclude Include="..\include\runedictionary.h" />
     <ClInclude Include="..\include\note.h" />
     <ClInclude Include="..\include\rune.h" />
     <ClInclude Include="..\include\runedetector.h" />
@@ -145,7 +148,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib;$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>opencv_world4110d.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
@@ -153,6 +156,10 @@
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110d.dll" "$(TargetDir)" /Y /D</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -169,7 +176,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib;$(SolutionDir)\libs\opencv\x64\vc16\lib;$(SolutionDir)\libs\opencv\x64\vc16\bin%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>opencv_world4110.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
@@ -177,6 +184,10 @@
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)\libs\opencv\x64\vc16\bin\opencv_world4110.dll" "$(TargetDir)" /Y /D</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

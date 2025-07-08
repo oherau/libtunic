@@ -6,42 +6,82 @@
 #include <string>
 #include <limits>
 #include <filesystem>
-#include "note.h"
-#include "rune.h"
-#include "word.h"
+#include <tinyxml2/tinyxml2.h>
+
 namespace fs = std::filesystem;
 
-const auto DICT_ENTRY_SEPARATOR = '=';
-const auto DICT_RUNE_SEPARATOR = '-';
-const auto DICT_RUNE_SEPARATOR_2 = ' ';
-const auto DICT_COMMENT = '#';
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <optional>
+#include <filesystem> // C++17 for file path handling
+
+// Define structures to hold dictionary data
+struct GrammaticalGroup {
+    std::string partOfSpeech; // e.g., "noun", "verb"
+    // Add more if your TEI includes gender, number, etc.
+};
+
+struct Example {
+    std::string text;
+    // Potentially add more fields like source, translation, etc.
+};
+
+struct Cit {
+    std::string quote;
+    // Potentially add more fields like source, translation, etc.
+};
+
+class Sense {
+public:
+    int number;
+    GrammaticalGroup gramGrp;
+    std::string definition;
+    std::vector<Example> examples; // An entry can have multiple examples per sense
+    std::vector<Cit> cits;
+
+    Sense() : number(0) {} // Default constructor
+
+    std::string to_string() const {
+        std::stringstream ss;
+        bool first = true;
+        for (const auto& cit : cits) {
+            if (first) { first = false; }
+            else { ss << ","; }
+            ss << cit.quote;
+        }
+        return ss.str();
+    }
+};
+
+class DictionaryEntry {
+public:
+    void print() const;
+    std::string id;        // xml:id attribute
+    std::string lemma;     // <orth> content
+    std::vector<Sense> senses; // An entry can have multiple senses
+    std::string to_string() const {
+        std::stringstream ss;
+        bool first = true;
+        for (const auto& sense : senses) {
+            if (first) { first = false; }
+            else { ss << "/"; }
+            ss << sense.to_string();
+        }
+        return ss.str();
+    }
+};
+
+
 
 class Dictionary {
 public:
     Dictionary() = default;
     Dictionary(const fs::path& filePath);
-    bool load(const fs::path& filePath);
-    bool save(const fs::path& filePath);
-    bool has_hash(const std::string& hash) const;
-    bool add_word(const std::string& word, const std::string& translation);
-    bool get_hash_list(std::vector<std::string>& hash_list) const;
-    bool get_word_list(std::vector<std::string>& word_list) const;
-    bool get_translation(const std::string& word, std::string& translation) const;
-    std::string translate(const std::string& str);
-    std::string translate(const std::vector<Note>& notes);
-    std::string translate(const std::vector<Rune>& runes);
-    std::string translate(const Word& word);
-    std::string translate(const std::vector<Word>& words);
-    bool generate_images(const fs::path& image_dir, std::string extension = ".png") const;
-    std::string& operator[](std::string key) {
-        return m_hashtable[key];
-    }
-
+    std::optional<DictionaryEntry> find(const std::string& searchTerm);
 private:
-    bool m_learning = false;
-    std::map<std::string, std::string> m_hashtable;
-    size_t notes_min_length = std::numeric_limits<size_t>::max();
-    size_t notes_max_length = 0;
+    fs::path m_filepath;
 };
 
 #endif // __DICTIONARY_H__
