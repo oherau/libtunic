@@ -60,6 +60,7 @@ public:
     int image_detection(const fs::path& dictionary_file, const fs::path& image_file);
 private:
     RuneDictionary* m_dictionary = nullptr;
+public:
     std::unordered_map<std::string, cv::Mat> m_rune_images; // Map to store rune images
 };
 

@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <string>
 #include <cstdint>
+#include <chrono>
+#include <cmath>
 #include "runedictionary.h"
 #include "arpeggiodetector.h"
 #include "rune.h"
@@ -460,6 +462,62 @@ TEST_CASE("dictionarize", "[image][translate]") {
     CHECK(nb_fails == 0);
 }
 
+TEST_CASE("bench_load_resize_word_vs_dynamic_draw", "[image][bench]")
+{
+    PRINT_TEST_HEADER("bench_load_resize_word_vs_dynamic_draw");
+
+    const auto TEST_IMG = "../../../data/screenshots/manual_page_3_inverted.jpg";
+    const auto scale_factors = {0.13, 0.23, 0.33, 0.43, 0.53, 1.13, 1.23, 1.33, 1.43, 1.53 };
+
+    RuneDictionary dictionary;
+    RuneDetector rune_detector(&dictionary);
+    rune_detector.load_rune_folder(RUNES_FOLDER);
+
+    std::vector<double> adapt_scale_factors_confirmed;
+	int adapt_detections = 0;
+    cv::Mat original_img = cv::imread(TEST_IMG);
+	cv::Mat image;
+	cv::cvtColor(original_img, image, cv::COLOR_BGR2GRAY);
+	image.convertTo(image, CV_8U);
+	std::vector<RuneZone> detected_runes_zones;
+
+    // load and resize bench
+    auto start_loadandresize = std::chrono::high_resolution_clock::now();
+    for (const auto& [key, pattern_image_original] : rune_detector.m_rune_images) {
+        auto word = Word(key);
+        for (const auto& scale_factor : scale_factors) {
+            // Resize the rune image to the current scale factor
+            cv::Mat pattern_image;
+            cv::resize(pattern_image_original, pattern_image, cv::Size(), scale_factor, scale_factor, (scale_factor > 1.0f ? cv::INTER_LINEAR : cv::INTER_AREA));
+            //cv::imshow("load and resize", pattern_image);
+            //cv::waitKey(0);
+        }
+    }
+    auto end_loadandresize = std::chrono::high_resolution_clock::now();
+    auto duration_loadandresize = end_loadandresize - start_loadandresize;
+    long long duration_loadandresize_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_loadandresize).count();
+    printf("duration_loadandresize_ms: %lld\n", duration_loadandresize_ms);
+
+    // generate image bench
+    auto start_genimg = std::chrono::high_resolution_clock::now();
+    for (const auto& [key, pattern_image_original] : rune_detector.m_rune_images) {
+        auto word = Word(key);
+        for (const auto& scale_factor : scale_factors) {
+            // Resize the rune image to the current scale factor
+            cv::Mat pattern_image;
+            auto size = RUNE_DEFAULT_SIZE * scale_factor;
+            double thickness = (std::max)((double)1.0f, RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * RUNE_DEFAULT_SIZE.height * scale_factor);
+            word.generate_image(size, thickness, pattern_image);
+            //cv::imshow("draw dynmically", pattern_image);
+            //cv::waitKey(0);
+        }
+    }
+    auto end_genimg = std::chrono::high_resolution_clock::now();
+    auto duration_genimg = end_genimg - start_genimg ;
+    long long duration_genimg_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_genimg).count();
+    printf("duration_genimg_ms: %lld\n", duration_genimg_ms);
+}
+
 TEST_CASE("arpeggio_sequence", "[audio]") {
 
     PRINT_TEST_HEADER("arpeggio_sequence");
@@ -662,6 +720,7 @@ TEST_CASE("audio_detection", "[audio][translate]") {
 
     CHECK(nb_fails == 0);
 }
+
 
 
 //TEST_CASE("translate_dictionary", "[audio][translate]") {
