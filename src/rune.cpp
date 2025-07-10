@@ -90,7 +90,7 @@ void Rune::draw_segment(const std::initializer_list<cv::Point2d>& segment, doubl
 		point.y = y + point.y * size.height / 100; // Assuming points are in percentage
 	}
 	// Draw the line segment on the output image
-	cv::line(output_image, points[0], points[1], cv::Scalar(255, 255, 255), tickness); // White color
+	cv::line(output_image, points[0], points[1], cv::Scalar(255, 255, 255), tickness, cv::LINE_AA); // White color
 }
 
 void Rune::draw_circle(const std::initializer_list<cv::Point2d>& radius, double tickness, int x, int y, cv::Size2i size, cv::Mat& output_image) const

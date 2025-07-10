@@ -322,6 +322,7 @@ bool RuneDetector::dictionarize(const fs::path& image_path, bool debug_mode)
 #include <sstream>
 #include <algorithm> // For std::max
 #include <optional>  // Required for std::optional
+#include "toolbox.cpp"
 
 // --- Helper Definitions (from previous explanations) ---
 
@@ -473,8 +474,27 @@ cv::Mat draw_text_in_rect(
 	return image;
 }
 
-bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detected_words, int adaptative_cycles, bool debug_mode)
+bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detected_words, int adaptative_cycles, bool debug_mode, bool useGeneratedRunes)
 {
+
+    //	// detect straight lines main color (dark or bright)
+	//std::vector<cv::Vec4i> detectedLines;
+
+	//// --- Process the image ---
+	//double minLineLength = 50; // Minimum length of a line to be detected
+	//double maxLineGap = 10;    // Maximum allowed gap between points on the same line to link them
+	//cv::Mat resultImage = detectAndMaskStraightLines(original_img, minLineLength, maxLineGap, detectedLines);
+
+	//double darkThreshold = 80;  // Pixels with average intensity below this are considered dark
+	//double brightThreshold = 180; // Pixels with average intensity above this are considered bright
+	//auto brightness = analyzeLineBrightness(original_img, detectedLines, darkThreshold, brightThreshold, debug_mode);
+	//if (brightness == BRIGHTNESS_DARK) {
+	//	// invert image so we always got white rune on black bg
+	//	cv::bitwise_not(original_img, original_img);
+	//}
+
+
+
 	//const auto ADAPTATIVE_DETECTIONS_THRESHOLD = 5;
 	std::vector<double> scale_factors, adapt_scale_factors_confirmed;
 	int adapt_detections = 0;
@@ -483,14 +503,13 @@ bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detect
 	image.convertTo(image, CV_8U);
 	std::vector<RuneZone> detected_runes_zones;
 
-	// TODO: add itermediate function to determine if the runes are:
-	//   - white on dark backround (nothing to do)
-	//   - black on bright background (invert color)
-
-
-
 	// detect word in image
-	for (const auto& [key, pattern_image_original] : m_rune_images) {
+	std::vector<std::string> hash_list;
+	this->m_dictionary->get_hash_list(hash_list);
+	for(const auto& key : hash_list) {
+	//for (const auto& [key, pattern_image_original] : m_rune_images) {
+
+		cv::Mat& pattern_image_original = m_rune_images[key];
 
 		auto word = Word(key);
 
@@ -507,9 +526,19 @@ bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detect
 
 
 		for (const auto& scale_factor : scale_factors) {
-			// Resize the rune image to the current scale factor
+
 			cv::Mat pattern_image;
-			cv::resize(pattern_image_original, pattern_image, cv::Size(), scale_factor, scale_factor, (scale_factor > 1.0f ? cv::INTER_LINEAR : cv::INTER_AREA));
+			if (useGeneratedRunes) {
+				// Generate rune image on the fly with correct target size 
+				auto size = RUNE_DEFAULT_SIZE * scale_factor;
+				double thickness = (std::max)((double)1.0f, RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * RUNE_DEFAULT_SIZE.height * scale_factor);
+				word.generate_image(size, thickness, pattern_image);
+			}
+			else {
+				// Resize the rune image to the current scale factor
+				cv::resize(pattern_image_original, pattern_image, cv::Size(), scale_factor, scale_factor, (scale_factor > 1.0f ? cv::INTER_LINEAR : cv::INTER_AREA));
+			}
+
 			if (pattern_image.empty()) {
 				std::cerr << "Error: Resized rune image is empty for word: " << word.get_hash() << std::endl;
 				continue;
@@ -548,7 +577,7 @@ bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detect
 						best_scale_corr = result.at<float>(j, i);
 					}
 
-					if (result.at<float>(j, i) > 0.8) {
+					if (result.at<float>(j, i) > RUNE_DETECTION_THRESHOLD) {
 						if (adaptative_cycles > 0) {
 							adapt_detections++;
 							if (std::find(adapt_scale_factors_confirmed.begin(), adapt_scale_factors_confirmed.end(), scale_factor) == adapt_scale_factors_confirmed.end()) {
@@ -558,24 +587,23 @@ bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detect
 
 						cv::Rect bounding_box = cv::Rect(i, j, pattern_image.cols, pattern_image.rows);
 						detected_runes_zones.push_back({ word, bounding_box });
-						if (debug_mode) {
 
+						double text_relative_width = 98.0 / 100.0;
+						double text_relative_height = 70.0 / 100.0;
+						cv::Rect text_zone = cv::Rect(
+							bounding_box.x + ((1.0 - text_relative_width) / 2.0) * bounding_box.width,
+							bounding_box.y + ((1.0 - text_relative_height) / 2.0) * bounding_box.height, // Position below the rune
+							bounding_box.width * text_relative_width,
+							bounding_box.height * text_relative_height // Fixed height for the text zone
+						);
+						std::string translation = m_dictionary->translate(word);
 
-							cv::Rect text_zone = cv::Rect(
-								bounding_box.x + 0.05* bounding_box.width,
-								bounding_box.y + 0.05* bounding_box.height, // Position below the rune
-								bounding_box.width - 0.1 * bounding_box.width,
-								bounding_box.height - 0.1 * bounding_box.height // Fixed height for the text zone
-							);
-							std::string translation = m_dictionary->translate(word);
-
-							int fontFace = 0;
-							double tickness = 1;
-							int padding = 0;
-							auto fontColor = cv::Scalar(255, 255, 255);
-							auto bgColor = cv::Scalar(0, 0, 0);
-							draw_text_in_rect(original_img, translation, text_zone, fontFace, 1.0, tickness, fontColor, bgColor, padding);
-						}
+						int fontFace = 0;
+						double tickness = 1;
+						int padding = 0;
+						auto fontColor = cv::Scalar(255, 255, 255);
+						auto bgColor = cv::Scalar(0, 0, 0);
+						draw_text_in_rect(original_img, translation, text_zone, fontFace, 1.0, tickness, fontColor, bgColor, padding);
 					}
 				}
 				std::cout << std::endl;
@@ -762,7 +790,7 @@ bool RuneDetector::generate_scale_factors(const cv::Mat& image, const cv::Mat& p
 }
 
 
-int RuneDetector::image_detection(const fs::path& image_file, const fs::path& output_file) {
+int RuneDetector::image_detection(const fs::path& image_file, const fs::path& output_file, int adaptative_cycles, bool generatedRunes, bool debug_mode) {
 
 	const auto RUNES_FOLDER = fs::path("../../../data/runes");
 
@@ -775,9 +803,7 @@ int RuneDetector::image_detection(const fs::path& image_file, const fs::path& ou
 	resize_to_fit_max_bounds(original_img, MAX_IMAGE_DETECTION_DIMENSIONS);
 
     std::vector<Word> detected_words;
-	int adaptative_cycles = 7;
-	bool debug_mode = true;
-    this->detect_words(original_img, detected_words, adaptative_cycles, debug_mode);
+    this->detect_words(original_img, detected_words, adaptative_cycles, debug_mode, generatedRunes);
 
     // Afficher la séquence de runes detectees
     std::cout << "==== DETECTED RUNES ====" << std::endl;

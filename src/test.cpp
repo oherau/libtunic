@@ -232,10 +232,11 @@ TEST_CASE("image_detect_words", "[image]") {
     rune_detector.load_rune_folder(RUNES_FOLDER);
 
     const std::vector< std::pair<std::string, std::string> > test_set_001 = {
-       { "../../../data/screenshots/found_an_item.jpg" , "found an item"},
+       //{ "../../../data/screenshots/found_an_item.jpg" , "found an item"},
        //{ "../../../data/screenshots/found_bracelet.png" , "found an item"},
        //{ "../../../data/screenshots/manual_page_10.jpg" , "lots of runes !!!"},
-        { "../../../data/screenshots/manual_page_10_inverted.jpg" , "lots of runes !!!"},
+       //{ "../../../data/screenshots/manual_page_10_inverted.jpg" , "lots of runes !!!"},
+         { "../../../data/screenshots/manual_page_10.jpg" , "lots of runes !!!"},
     };
 
     int nb_fails = 0;
@@ -462,62 +463,6 @@ TEST_CASE("dictionarize", "[image][translate]") {
     CHECK(nb_fails == 0);
 }
 
-TEST_CASE("bench_load_resize_word_vs_dynamic_draw", "[image][bench]")
-{
-    PRINT_TEST_HEADER("bench_load_resize_word_vs_dynamic_draw");
-
-    const auto TEST_IMG = "../../../data/screenshots/manual_page_3_inverted.jpg";
-    const auto scale_factors = {0.13, 0.23, 0.33, 0.43, 0.53, 1.13, 1.23, 1.33, 1.43, 1.53 };
-
-    RuneDictionary dictionary;
-    RuneDetector rune_detector(&dictionary);
-    rune_detector.load_rune_folder(RUNES_FOLDER);
-
-    std::vector<double> adapt_scale_factors_confirmed;
-	int adapt_detections = 0;
-    cv::Mat original_img = cv::imread(TEST_IMG);
-	cv::Mat image;
-	cv::cvtColor(original_img, image, cv::COLOR_BGR2GRAY);
-	image.convertTo(image, CV_8U);
-	std::vector<RuneZone> detected_runes_zones;
-
-    // load and resize bench
-    auto start_loadandresize = std::chrono::high_resolution_clock::now();
-    for (const auto& [key, pattern_image_original] : rune_detector.m_rune_images) {
-        auto word = Word(key);
-        for (const auto& scale_factor : scale_factors) {
-            // Resize the rune image to the current scale factor
-            cv::Mat pattern_image;
-            cv::resize(pattern_image_original, pattern_image, cv::Size(), scale_factor, scale_factor, (scale_factor > 1.0f ? cv::INTER_LINEAR : cv::INTER_AREA));
-            //cv::imshow("load and resize", pattern_image);
-            //cv::waitKey(0);
-        }
-    }
-    auto end_loadandresize = std::chrono::high_resolution_clock::now();
-    auto duration_loadandresize = end_loadandresize - start_loadandresize;
-    long long duration_loadandresize_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_loadandresize).count();
-    printf("duration_loadandresize_ms: %lld\n", duration_loadandresize_ms);
-
-    // generate image bench
-    auto start_genimg = std::chrono::high_resolution_clock::now();
-    for (const auto& [key, pattern_image_original] : rune_detector.m_rune_images) {
-        auto word = Word(key);
-        for (const auto& scale_factor : scale_factors) {
-            // Resize the rune image to the current scale factor
-            cv::Mat pattern_image;
-            auto size = RUNE_DEFAULT_SIZE * scale_factor;
-            double thickness = (std::max)((double)1.0f, RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * RUNE_DEFAULT_SIZE.height * scale_factor);
-            word.generate_image(size, thickness, pattern_image);
-            //cv::imshow("draw dynmically", pattern_image);
-            //cv::waitKey(0);
-        }
-    }
-    auto end_genimg = std::chrono::high_resolution_clock::now();
-    auto duration_genimg = end_genimg - start_genimg ;
-    long long duration_genimg_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_genimg).count();
-    printf("duration_genimg_ms: %lld\n", duration_genimg_ms);
-}
-
 TEST_CASE("arpeggio_sequence", "[audio]") {
 
     PRINT_TEST_HEADER("arpeggio_sequence");
@@ -736,3 +681,200 @@ TEST_CASE("audio_detection", "[audio][translate]") {
 //        }
 //    }
 //}
+
+
+
+TEST_CASE("detect_runes_brightness", "[image]") {
+
+    PRINT_TEST_HEADER("detect_runes_brightness");
+
+    bool debug_mode = true;
+
+    const std::vector<std::pair<std::string, Brightness>> test_set = {
+                {"../../../data/screenshots/manual_page_10.jpg", BRIGHTNESS_DARK},
+         {"../../../data/screenshots/manual_page_10_inverted.jpg", BRIGHTNESS_BRIGHT},
+        {"../../../data/screenshots/manual_page_3.jpg", BRIGHTNESS_DARK},
+        {"../../../data/screenshots/manual_page_3_inverted.jpg", BRIGHTNESS_BRIGHT},
+    };
+
+    for (const auto& item : test_set) {
+
+        const auto& img = item.first;
+        const auto& expected = item.second;
+
+        // --- Load an image ---
+        // Replace "path/to/your/image.jpg" with the actual path to your image file.
+        // If you don't have an image, you can create a dummy one for testing.
+        cv::Mat originalImage = cv::imread(img);
+
+        // Check if the image was loaded successfully
+        if (originalImage.empty()) {
+            std::cerr << "Error: Could not open or find the image." << std::endl;
+            std::cerr << "Please replace 'path/to/your/image.jpg' with a valid image path." << std::endl;
+            // Create a dummy image for demonstration if loading fails
+            std::cout << "Creating a dummy image for demonstration..." << std::endl;
+            originalImage = cv::Mat(400, 600, CV_8UC3, cv::Scalar(0, 0, 0)); // Black background
+            // Draw some lines on the dummy image
+            cv::line(originalImage, cv::Point(50, 50), cv::Point(550, 50), cv::Scalar(0, 255, 0), 5); // Green horizontal (bright on black)
+            cv::line(originalImage, cv::Point(100, 100), cv::Point(100, 300), cv::Scalar(255, 0, 0), 5); // Blue vertical (bright on black)
+            cv::line(originalImage, cv::Point(200, 100), cv::Point(400, 300), cv::Scalar(0, 0, 255), 5); // Red diagonal (bright on black)
+            cv::line(originalImage, cv::Point(450, 50), cv::Point(500, 350), cv::Scalar(255, 255, 0), 3); // Yellow diagonal (bright on black)
+
+            // Add some "darker" lines if the background was lighter, or on a bright background
+            // For demonstration purposes, let's make a white background and draw dark lines
+            cv::Mat brightBackground = cv::Mat(400, 600, CV_8UC3, cv::Scalar(255, 255, 255)); // White background
+            cv::line(brightBackground, cv::Point(50, 350), cv::Point(550, 350), cv::Scalar(50, 50, 50), 5); // Dark gray horizontal
+            cv::line(brightBackground, cv::Point(500, 100), cv::Point(500, 300), cv::Scalar(100, 0, 0), 5); // Dark red vertical
+            cv::addWeighted(originalImage, 0.5, brightBackground, 0.5, 0, originalImage); // Blend for mixed lines
+        }
+
+        // Define line detection parameters
+        // TODO: change hardcoded values to parameters or relative sizes
+        double minLineLength = 50; // Minimum length of a line to be detected
+        double maxLineGap = 10;    // Maximum allowed gap between points on the same line to link them
+
+        // Vector to store detected lines, passed by reference to detectAndMaskStraightLines
+        std::vector<cv::Vec4i> detectedLines;
+
+        // --- Process the image ---
+        cv::Mat resultImage = detectAndMaskStraightLines(originalImage, minLineLength, maxLineGap, detectedLines);
+
+        // --- Analyze line brightness ---
+        // Define thresholds for dark and bright lines (0-255 scale)
+        double darkThreshold = 80;  // Pixels with average intensity below this are considered dark
+        double brightThreshold = 180; // Pixels with average intensity above this are considered bright
+        auto brightness = analyzeLineBrightness(originalImage, detectedLines, darkThreshold, brightThreshold, debug_mode);
+        CHECK(brightness == expected);
+
+        if (debug_mode) {
+            // --- Display the images ---
+            cv::imshow("Original Image", originalImage);
+            cv::imshow("Lines Masked Image", resultImage);
+
+
+            // To see the generated mask explicitly:
+            // The mask generation logic is already within detectAndMaskStraightLines,
+            // but we can recreate it for explicit display if needed.
+            cv::Mat explicitMask = cv::Mat::zeros(originalImage.size(), originalImage.type());
+            for (const auto& line : detectedLines) { // Use the same detectedLines from the function call
+                cv::Point pt1(line[0], line[1]);
+                cv::Point pt2(line[2], line[3]);
+                cv::line(explicitMask, pt1, pt2, cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
+            }
+            cv::imshow("Explicit Line Mask", explicitMask);
+
+
+            // Wait for a key press indefinitely
+            cv::waitKey(0);
+
+            // Destroy all OpenCV windows
+            cv::destroyAllWindows();
+        }
+
+    }
+}
+
+
+
+///////////////////////////////////////////////////
+//   BENCH
+///////////////////////////////////////////////////
+
+TEST_CASE("bench_detectct_words_load_resize_word_vs_dynamic_draw", "[image][bench]")
+{
+    PRINT_TEST_HEADER("bench_detectct_words_load_resize_word_vs_dynamic_draw");
+
+    const auto TEST_IMG = "../../../data/screenshots/manual_page_3_inverted.jpg";
+    const auto scale_factors = { 0.13, 0.23, 0.33, 0.43, 0.53, 1.13, 1.23, 1.33, 1.43, 1.53 };
+
+    RuneDictionary dictionary(DICTIONARY_ENG);
+    dictionary.save(DICTIONARY_ENG);
+    dictionary.load(DICTIONARY_ENG);
+    dictionary.generate_images("../../../data/runes");
+    RuneDetector rune_detector(&dictionary);
+    rune_detector.load_rune_folder(RUNES_FOLDER);
+
+    std::vector<double> adapt_scale_factors_confirmed;
+    int adapt_detections = 0;
+    cv::Mat original_img = cv::imread(TEST_IMG);
+    cv::Mat image;
+    cv::cvtColor(original_img, image, cv::COLOR_BGR2GRAY);
+    image.convertTo(image, CV_8U);
+    std::vector<RuneZone> detected_runes_zones;
+
+    // load and resize bench
+    auto start_loadandresize = std::chrono::high_resolution_clock::now();
+    for (const auto& [key, pattern_image_original] : rune_detector.m_rune_images) {
+        auto word = Word(key);
+        for (const auto& scale_factor : scale_factors) {
+            // Resize the rune image to the current scale factor
+            cv::Mat pattern_image;
+            cv::resize(pattern_image_original, pattern_image, cv::Size(), scale_factor, scale_factor, (scale_factor > 1.0f ? cv::INTER_LINEAR : cv::INTER_AREA));
+            //cv::imshow("load and resize", pattern_image);
+            //cv::waitKey(0);
+        }
+    }
+    auto end_loadandresize = std::chrono::high_resolution_clock::now();
+    auto duration_loadandresize = end_loadandresize - start_loadandresize;
+    long long duration_loadandresize_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_loadandresize).count();
+
+    // generate image bench
+    auto start_genimg = std::chrono::high_resolution_clock::now();
+    for (const auto& [key, pattern_image_original] : rune_detector.m_rune_images) {
+        auto word = Word(key);
+        for (const auto& scale_factor : scale_factors) {
+            // Resize the rune image to the current scale factor
+            cv::Mat pattern_image;
+            auto size = RUNE_DEFAULT_SIZE * scale_factor;
+            double thickness = (std::max)((double)1.0f, RUNE_SEGMENT_DRAW_DEFAULT_TICKNESS * RUNE_DEFAULT_SIZE.height * scale_factor);
+            word.generate_image(size, thickness, pattern_image);
+            //cv::imshow("draw dynmically", pattern_image);
+            //cv::waitKey(0);
+        }
+    }
+    auto end_genimg = std::chrono::high_resolution_clock::now();
+    auto duration_genimg = end_genimg - start_genimg;
+    long long duration_genimg_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_genimg).count();
+
+    printf("============ BENCH RESULTS ============\n");
+    printf("duration_loadandresize_ms: %lld\n", duration_loadandresize_ms);
+    printf("duration_genimg_ms: %lld\n", duration_genimg_ms);
+    printf("\n");
+}
+
+TEST_CASE("bench_image_detect_load_resize_word_vs_dynamic_draw", "[image][bench]")
+{
+    PRINT_TEST_HEADER("bench_image_detect_load_resize_word_vs_dynamic_draw");
+
+    const auto SRC_IMG = "../../../data/screenshots/manual_page_3_inverted.jpg";
+    const auto DST_IMG_1 = "../../../data/screenshots/manual_page_3_inverted_decoded_1.jpg";
+    const auto DST_IMG_2 = "../../../data/screenshots/manual_page_3_inverted_decoded_2.jpg";
+
+    RuneDictionary dictionary(DICTIONARY_ENG);
+    dictionary.save(DICTIONARY_ENG);
+    dictionary.load(DICTIONARY_ENG);
+    dictionary.generate_images("../../../data/runes");
+    RuneDetector rune_detector(&dictionary);
+    rune_detector.load_rune_folder(RUNES_FOLDER);
+
+    bool debug_mode = true;
+
+    // load and resize bench
+    auto start_loadandresize = std::chrono::high_resolution_clock::now();
+    rune_detector.image_detection(SRC_IMG, DST_IMG_1, 7, false, debug_mode);
+    auto end_loadandresize = std::chrono::high_resolution_clock::now();
+    auto duration_loadandresize = end_loadandresize - start_loadandresize;
+    long long duration_loadandresize_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_loadandresize).count();
+
+    // generate image bench
+    auto start_genimg = std::chrono::high_resolution_clock::now();
+    rune_detector.image_detection(SRC_IMG, DST_IMG_2, 7, true, debug_mode);
+    auto end_genimg = std::chrono::high_resolution_clock::now();
+    auto duration_genimg = end_genimg - start_genimg;
+    long long duration_genimg_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration_genimg).count();
+
+    printf("============ BENCH RESULTS ============\n");
+    printf("duration_loadandresize_ms: %lld\n", duration_loadandresize_ms);
+    printf("duration_genimg_ms: %lld\n", duration_genimg_ms);
+    printf("\n");
+}

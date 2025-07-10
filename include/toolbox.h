@@ -69,5 +69,6 @@ void toLowerFast(std::string& s);
 std::string toLowerFastCopy(const std::string& s);
 
 void resize_to_fit_max_bounds(cv::Mat& image, const cv::Size& max_bounds);
+cv::Mat detectAndMaskStraightLines(const cv::Mat& inputImage, double minLineLength, double maxLineGap);
 
 #endif // __TOOLBOX_H__

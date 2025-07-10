@@ -573,3 +573,141 @@ void resize_to_fit_max_bounds(cv::Mat& image, const cv::Size& max_bounds) {
 		<< " to " << image.cols << "x" << image.rows << " (target max: "
 		<< max_width << "x" << max_height << ")" << std::endl;
 }
+
+// Function to detect straight lines, create a mask, and apply it to the image
+// Added minLineLength and maxLineGap parameters for more control over HoughLinesP
+cv::Mat detectAndMaskStraightLines(const cv::Mat& inputImage, double minLineLength, double maxLineGap, std::vector<cv::Vec4i>& detectedLines) {
+	// 1. Convert the input image to grayscale
+	cv::Mat grayImage;
+	cv::cvtColor(inputImage, grayImage, cv::COLOR_BGR2GRAY);
+
+	// 2. Apply Gaussian blur to reduce noise and help with edge detection
+	cv::Mat blurredImage;
+	cv::GaussianBlur(grayImage, blurredImage, cv::Size(5, 5), 0);
+
+	// 3. Perform Canny edge detection
+	// The thresholds (50, 150) can be adjusted based on your image content
+	cv::Mat edges;
+	cv::Canny(blurredImage, edges, 50, 150, 3);
+
+	// 4. Detect lines using the Probabilistic Hough Transform (HoughLinesP)
+	// The detected lines are stored in the 'detectedLines' reference parameter.
+	cv::HoughLinesP(edges, detectedLines, 1, CV_PI / 180, 100, minLineLength, maxLineGap);
+
+	// 5. Create a black mask image (same size and type as the input image)
+	// Initialize with zeros (black)
+	cv::Mat lineMask = cv::Mat::zeros(inputImage.size(), inputImage.type());
+
+	// 6. Draw the detected lines onto the mask in white
+	// For a bitmask, we want white lines on a black background.
+	for (const auto& line : detectedLines) {
+		cv::Point pt1(line[0], line[1]);
+		cv::Point pt2(line[2], line[3]);
+		// Draw a white line (255, 255, 255) with thickness 2
+		cv::line(lineMask, pt1, pt2, cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
+	}
+
+	// 7. Apply the mask to the original image
+	// This operation will keep only the parts of the original image where the mask is white.
+	cv::Mat resultImage;
+	cv::bitwise_and(inputImage, lineMask, resultImage);
+
+	return resultImage;
+}
+
+// Helper function to get pixel intensity (brightness) for a BGR or grayscale image
+double getPixelIntensity(const cv::Mat& image, int x, int y) {
+	if (x < 0 || x >= image.cols || y < 0 || y >= image.rows) {
+		return 0.0; // Return 0 for out-of-bounds pixels
+	}
+
+	if (image.channels() == 1) {
+		// Grayscale image
+		return static_cast<double>(image.at<uchar>(y, x));
+	}
+	else if (image.channels() == 3) {
+		// BGR image, calculate luminance
+		cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
+		return 0.299 * pixel[2] + 0.587 * pixel[1] + 0.114 * pixel[0]; // R, G, B
+	}
+	return 0.0; // Should not happen for common image types
+}
+
+enum Brightness {
+	BRIGHTNESS_UNKNOWN,
+	BRIGHTNESS_DARK,
+	BRIGHTNESS_NEUTRAL,
+	BRIGHTNESS_BRIGHT
+};
+
+// Function to analyze the brightness of detected lines
+Brightness analyzeLineBrightness(const cv::Mat& originalImage, const std::vector<cv::Vec4i>& lines,
+	double darkThreshold, double brightThreshold, bool debug_mode) {
+	int darkLinesCount = 0;
+	int brightLinesCount = 0;
+	int totalLines = lines.size();
+
+	if (totalLines == 0) {
+		std::cout << "No lines detected to analyze brightness." << std::endl;
+		return BRIGHTNESS_UNKNOWN;
+	}
+
+	if(debug_mode) std::cout << "\n--- Line Brightness Analysis ---" << std::endl;
+
+	for (size_t i = 0; i < lines.size(); ++i) {
+		const auto& line = lines[i];
+		cv::Point pt1(line[0], line[1]);
+		cv::Point pt2(line[2], line[3]);
+
+		std::vector<double> intensities;
+		// Sample points along the line using cv::LineIterator for robust sampling
+		cv::LineIterator it(originalImage, pt1, pt2, 8); // 8-connectivity
+		for (int j = 0; j < it.count; ++j, ++it) {
+			intensities.push_back(getPixelIntensity(originalImage, it.pos().x, it.pos().y));
+		}
+
+		if (intensities.empty()) {
+			continue; // Skip if no pixels sampled (e.g., very short line)
+		}
+
+		double averageBrightness = std::accumulate(intensities.begin(), intensities.end(), 0.0) / intensities.size();
+
+		if(debug_mode) std::cout << "Line " << i + 1 << " (from " << pt1 << " to " << pt2 << "): Average Brightness = " << averageBrightness << std::endl;
+
+		if (averageBrightness < darkThreshold) {
+			if(debug_mode) std::cout << "  -> Classified as DARK" << std::endl;
+			darkLinesCount++;
+		}
+		else if (averageBrightness > brightThreshold) {
+			if (debug_mode) std::cout << "  -> Classified as BRIGHT" << std::endl;
+			brightLinesCount++;
+		}
+		else {
+			if (debug_mode) std::cout << "  -> Classified as NEUTRAL" << std::endl;
+		}
+	}
+
+	if (debug_mode) {
+		std::cout << "\n--- Summary ---" << std::endl;
+		std::cout << "Total Lines Detected: " << totalLines << std::endl;
+		std::cout << "Dark Lines: " << darkLinesCount << std::endl;
+		std::cout << "Bright Lines: " << brightLinesCount << std::endl;
+		std::cout << "Neutral Lines: " << totalLines - (darkLinesCount + brightLinesCount) << std::endl;
+	}
+
+	if (darkLinesCount > brightLinesCount) {
+		if (debug_mode) std::cout << "Overall: Lines are mainly DARK." << std::endl;
+		return BRIGHTNESS_DARK;
+	}
+	else if (brightLinesCount > darkLinesCount) {
+		if (debug_mode) std::cout << "Overall: Lines are mainly BRIGHT." << std::endl;
+		return BRIGHTNESS_BRIGHT;
+	}
+	else if (totalLines > 0) {
+		if (debug_mode) std::cout << "Overall: Lines have a balanced mix of dark and bright, or are mainly neutral." << std::endl;
+		return BRIGHTNESS_NEUTRAL;
+	}
+	return BRIGHTNESS_UNKNOWN;
+}
+
+

@@ -62,9 +62,30 @@ bool RuneDictionary::load(const fs::path& filePath) {
                 }
             }
         }
-
     }
     file.close();
+
+    // sort elements for detection
+    // 1. Copy map elements to a vector of pairs
+    m_ordered_entries = std::vector<std::pair<std::string, std::string>>(m_hashtable.begin(), m_hashtable.end());
+
+    // 2. Sort the vector using a custom lambda comparator
+    std::sort(m_ordered_entries.begin(), m_ordered_entries.end(),
+        [](const std::pair<std::string, std::string>& a,
+            const std::pair<std::string, std::string>& b) {
+                // Primary sort criterion: length of the key (a.first)
+                if (a.first.length() != b.first.length()) {
+                    return a.first.length() > b.first.length();
+                }
+                // Secondary sort criterion: lexicographical order of the value (a.second)
+                return a.second < b.second;
+        });
+
+    std::cout << "Vector sorted by key length, then by value lexicographically:\n";
+    for (const auto& pair : m_ordered_entries) {
+        std::cout << "  Key: \"" << pair.first << "\", Value: \"" << pair.second << "\"\n";
+    }
+    std::cout << "\n";
 
     printf("\n");
     return true;
@@ -149,7 +170,11 @@ bool RuneDictionary::add_word(const std::string& word_hash, const std::string& t
 
 bool RuneDictionary::get_hash_list(std::vector<std::string>& hash_list) const
 {
-    for (const auto& [key, value] : m_hashtable) {
+    //for (const auto& [key, value] : m_hashtable) {
+    //    hash_list.push_back(key);
+    //}
+    // get keys from ordered list
+    for (const auto& [key, value] : m_ordered_entries) {
         hash_list.push_back(key);
     }
     return true;

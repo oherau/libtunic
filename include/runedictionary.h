@@ -40,6 +40,7 @@ public:
 private:
     bool m_learning = false;
     std::map<std::string, std::string> m_hashtable;
+    std::vector<std::pair<std::string, std::string>> m_ordered_entries;
     size_t notes_min_length = std::numeric_limits<size_t>::max();
     size_t notes_max_length = 0;
 };

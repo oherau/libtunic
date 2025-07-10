@@ -12,7 +12,7 @@
 namespace fs = std::filesystem;
 
 const double RUNE_MINIMAL_AREA = 100; // Minimum area for a rune to be considered valid. default 100.0f
-const double RUNE_DETECTION_THRESHOLD = 0.9f; // Threshold the result to find matches - Adjust as needed. default 0.8
+const double RUNE_DETECTION_THRESHOLD = 0.8f; // Threshold the result to find matches - Adjust as needed. default 0.8
 const char RUNE_WORD_TRANSLATION_SEPARATOR = '_'; // Separator for rune word translations
 
 // Enum for horizontal text alignment
@@ -49,7 +49,7 @@ public:
 	bool load_rune_folder(const fs::path& dict_folder);
     bool register_word_image(const fs::path& word_image);
 	//bool detect_runes(const fs::path& image_path, std::vector<Rune>& detected_runes);
-    bool detect_words(cv::Mat& image, std::vector<Word>& detected_words, int adaptative_cycles = 0, bool debug_mode = false);
+    bool detect_words(cv::Mat& image, std::vector<Word>& detected_words, int adaptative_cycles = 0, bool debug_mode = false, bool useGeneratedRunes=false);
     void displayMatProperties(const cv::Mat& mat, const std::string& name = "Mat");
     bool generate_scale_factors(const cv::Mat& image, const cv::Mat& pattern, std::vector<double>& scale_factors);
     cv::Mat get_image_lines(const cv::Mat& src);
@@ -57,7 +57,7 @@ public:
     cv::Mat crop_black_borders(const cv::Mat& image);
 	bool dictionarize(const fs::path& image_path, bool debug_mode = false);
     //bool draw_text(cv::Mat& image, const cv::Rect& bounding_box, const std::string& translation, const cv::Scalar& color, int thickness);
-    int image_detection(const fs::path& dictionary_file, const fs::path& image_file);
+    int image_detection(const fs::path& dictionary_file, const fs::path& image_file, int adaptative_cycles = 7, bool generatedRunes = true, bool debug_mode = false);
 private:
     RuneDictionary* m_dictionary = nullptr;
 public:
