@@ -474,7 +474,7 @@ cv::Mat draw_text_in_rect(
 	return image;
 }
 
-bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detected_words, int adaptative_cycles, bool debug_mode, bool useGeneratedRunes)
+bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detected_words, int adaptative_cycles, bool debug_mode, bool useGeneratedRunes, bool overwriteOnDetection)
 {
 
     //	// detect straight lines main color (dark or bright)
@@ -510,8 +510,11 @@ bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detect
 	//for (const auto& [key, pattern_image_original] : m_rune_images) {
 
 		cv::Mat& pattern_image_original = m_rune_images[key];
-
 		auto word = Word(key);
+
+		//if (debug_mode) {
+		//	printf("Try to find: \n");
+		//}
 
 		double best_scale_factor = 0;
 		double best_scale_corr = 0;
@@ -603,7 +606,24 @@ bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detect
 						int padding = 0;
 						auto fontColor = cv::Scalar(255, 255, 255);
 						auto bgColor = cv::Scalar(0, 0, 0);
+
+						//if (overwriteOnDetection) {
+							// overwrite to prevent from extra detection
+							cv::rectangle(image, text_zone, bgColor, cv::FILLED);
+						//}
 						draw_text_in_rect(original_img, translation, text_zone, fontFace, 1.0, tickness, fontColor, bgColor, padding);
+
+						//debug_mode = true;
+						//if (debug_mode) {
+						//	// overwrite to prevent from extra detection
+						//	cv::rectangle(image, text_zone, bgColor, cv::FILLED);
+						//	cv::imshow("new", image);
+						//	cv::imshow("original", original_img);
+						//	cv::waitKey(0);
+						//	cv::destroyAllWindows();
+						//}
+						cv::imshow("translation", original_img);
+						cv::waitKey(1);
 					}
 				}
 				std::cout << std::endl;
@@ -665,6 +685,7 @@ bool RuneDetector::detect_words(cv::Mat& original_img, std::vector<Word>& detect
 		std::cout << "\n";
 	}
 
+	cv::destroyAllWindows();
 	return true;
 }
 
@@ -803,7 +824,7 @@ int RuneDetector::image_detection(const fs::path& image_file, const fs::path& ou
 	resize_to_fit_max_bounds(original_img, MAX_IMAGE_DETECTION_DIMENSIONS);
 
     std::vector<Word> detected_words;
-    this->detect_words(original_img, detected_words, adaptative_cycles, debug_mode, generatedRunes);
+    this->detect_words(original_img, detected_words, adaptative_cycles, debug_mode, generatedRunes, true);
 
     // Afficher la séquence de runes detectees
     std::cout << "==== DETECTED RUNES ====" << std::endl;

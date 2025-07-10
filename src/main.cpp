@@ -103,12 +103,14 @@ int main(int argc, char* argv[]) {
     if (fs::path(input_file).extension() == ".jpg") {
 
         RuneDictionary rune_dictionary(DICTIONARY_ENG);
+        rune_dictionary.save(DICTIONARY_ENG);
+        rune_dictionary.generate_images(RUNES_FOLDER);
         RuneDetector rune_detector(&rune_dictionary);
         rune_detector.load_rune_folder(RUNES_FOLDER);
 
         auto output_file = fs::path(input_file).parent_path() / (fs::path(input_file).stem().string() + std::string("_decrypted") + fs::path(input_file).extension().string());
 
-        int detection_result = rune_detector.image_detection(input_file, output_file);
+        int detection_result = rune_detector.image_detection(input_file, output_file, 7, false, false);
     }
 
     return detection_result;
